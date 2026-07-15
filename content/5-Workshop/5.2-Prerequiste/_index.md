@@ -1,0 +1,106 @@
+---
+title : "Prerequiste"
+date : 2024-01-01 
+weight : 2 
+chapter : false
+pre : " <b> 5.2. </b> "
+---
+
+#### AWS Account Setup
+
+1. Go to [aws.amazon.com](https://aws.amazon.com) and click **Create an AWS Account**.
+2. Follow the sign-up flow. This creates your **root user** — the account owner with unrestricted access.
+3. Do not use the root user for daily work. Root access is only for account-level tasks (billing, closing the account, initial IAM setup).
+
+#### Set a Billing Alarm First
+
+Set this up before creating any other resource, so cost overruns are caught early.
+
+1. Sign in to the AWS Console as root.
+2. Open the **Billing and Cost Management** console.
+3. In the left menu, click **Billing Preferences**.
+4. Check **Receive Billing Alerts**. Click **Save preferences**.
+5. Open the **CloudWatch** console. CloudWatch billing metrics are only available in **us-east-1** — switch your region to **US East (N. Virginia)** using the region selector top-right.
+6. In the left menu, click **Alarms** → **All alarms** → **Create alarm**.
+7. Click **Select metric** → **Billing** → **Total Estimated Charge** → select the EstimatedCharges metric → **Select metric**.
+8. Under **Conditions**, set **Threshold type** to Static, condition **Greater than**, value 50 (matches this workshop's $50/month budget ceiling).
+9. Click **Next**. Under **Notification**, create a new SNS topic, e.g. billing-alerts, and enter your email address.
+10. Click **Next** → name the alarm monthly-budget-alarm → **Create alarm**.
+11. Check your email and confirm the SNS subscription — the alarm will not deliver notifications until this is confirmed.
+
+#### Create a Personal IAM User with MFA
+
+Never use the root user for regular work. Create a personal administrator user instead.
+
+1. Open the **IAM** console.
+2. In the left menu, click **Users** → **Create user**.
+3. User name: your name or a consistent identifier, e.g. phatnguyen.
+4. Check **Provide user access to the AWS Management Console**.
+5. Click **Next**. Select **Attach policies directly** → check **AdministratorAccess**.
+6. Click **Next** → **Create user**.
+7. Click into the new user → **Security credentials** tab → **Assign MFA device**.
+8. Choose **Authenticator app**, scan the QR code with an app such as Google Authenticator or Authy, and enter two consecutive codes to confirm.
+9. Sign out of the root user. From now on, sign in as this IAM user for all work in this workshop.
+
+#### Install and Configure the AWS CLI
+
+1. Install the AWS CLI from [aws.amazon.com/cli](https://aws.amazon.com/cli).
+2. Verify the install:
+```bash
+   aws --version
+```
+3. Create an access key for your IAM user: IAM console → your user → **Security credentials** tab → **Create access key** → choose **Command Line Interface (CLI)** → confirm → **Create access key**. Copy the **Access Key ID** and **Secret Access Key** — the secret is only shown once.
+4. Configure a named profile (avoid the default profile, so multiple AWS accounts/users don't conflict on the same machine):
+```bash
+   aws configure --profile yourname
+```
+5. Enter:
+   - **AWS Access Key ID** — from step 3
+   - **AWS Secret Access Key** — from step 3
+   - **Default region** — \ap-southeast-1\
+   - **Default output format** — \json\
+6. Verify the profile works:
+```bash
+   aws sts get-caller-identity --profile yourname
+```
+   This returns your account ID and user ARN.
+
+#### Install Terraform, Python, and Git
+
+1. Install Terraform from [terraform.io/downloads](https://www.terraform.io/downloads). Verify:
+```bash
+   terraform -version
+```
+2. Install Python 3.12 from [python.org](https://python.org). Verify:
+```bash
+   python3 --version
+```
+3. Install Git from [git-scm.com](https://git-scm.com). Verify:
+```bash
+   git --version
+```
+
+#### Request Amazon Bedrock Model Access
+
+Bedrock requires explicit access approval per model before your Lambda function can call it.
+
+1. Open the AWS Console and search for **Amazon Bedrock**.
+2. In the left menu, click **Model access**.
+3. Click **Modify model access**.
+4. Find **Amazon Nova Lite** and check the box next to it.
+5. Click **Save changes**.
+6. Wait 5–10 minutes. Status changes from **Available** to **Access granted**.
+
+If your account is new, you may see an on-demand quota of **0** for this model even after access is granted. This is a separate limit from model access — it controls how many requests per second you can send. If you hit this, open a case with **AWS Support** → **Service Quotas** to request an increase. This workshop's MOCK_SUMMARIZE flag exists specifically to work around this while a quota increase is pending.
+
+#### Clone the Repository
+
+1. Clone the project:
+```bash
+   git clone https://github.com/your-org/Project_Abstract.git
+   cd Project_Abstract
+```
+2. This workshop provisions named, globally-unique resources (S3 bucket names, Cognito domain prefixes). If following this guide with your own AWS account, change these values before running Terraform to avoid collisions with other readers:
+   - S3 bucket names (must be globally unique across all of AWS)
+   - Cognito Hosted UI domain prefix (must be globally unique per region)
+   - Any hardcoded account ID references — replace with your own account ID from aws sts get-caller-identity
