@@ -6,40 +6,26 @@ chapter : false
 pre : " <b> 5.2. </b> "
 ---
 
-#### AWS Account Setup
-
-1. Go to [aws.amazon.com](https://aws.amazon.com) and click **Create an AWS Account**.
-2. Follow the sign-up flow. This creates your **root user** — the account owner with unrestricted access.
-3. Do not use the root user for daily work. Root access is only for account-level tasks (billing, closing the account, initial IAM setup).
-
-#### Set a Billing Alarm First
-
-Set this up before creating any other resource, so cost overruns are caught early.
-
-1. Sign in to the AWS Console as root.
-2. Open the **Billing and Cost Management** console.
-3. In the left menu, click **Billing Preferences**.
-4. Check **Receive Billing Alerts**. Click **Save preferences**.
-5. Open the **CloudWatch** console. CloudWatch billing metrics are only available in **us-east-1** — switch your region to **US East (N. Virginia)** using the region selector top-right.
-6. In the left menu, click **Alarms** → **All alarms** → **Create alarm**.
-7. Click **Select metric** → **Billing** → **Total Estimated Charge** → select the EstimatedCharges metric → **Select metric**.
-8. Under **Conditions**, set **Threshold type** to Static, condition **Greater than**, value 50 (matches this workshop's $50/month budget ceiling).
-9. Click **Next**. Under **Notification**, create a new SNS topic, e.g. billing-alerts, and enter your email address.
-10. Click **Next** → name the alarm monthly-budget-alarm → **Create alarm**.
-11. Check your email and confirm the SNS subscription — the alarm will not deliver notifications until this is confirmed.
-
 #### Create a Personal IAM User with MFA
 
 Never use the root user for regular work. Create a personal administrator user instead.
 
 1. Open the **IAM** console.
+![overview](/images/5-Workshop/5.2-Prerequisite/IAM_console.jpeg)
 2. In the left menu, click **Users** → **Create user**.
-3. User name: your name or a consistent identifier, e.g. phatnguyen.
-4. Check **Provide user access to the AWS Management Console**.
-5. Click **Next**. Select **Attach policies directly** → check **AdministratorAccess**.
-6. Click **Next** → **Create user**.
-7. Click into the new user → **Security credentials** tab → **Assign MFA device**.
+![overview](/images/5-Workshop/5.2-Prerequisite/IAM_create_user.jpeg)
+3. User name: your name or a consistent identifier, e.g. phatnguyen. Check Provide user access to the AWS Management Console.
+![overview](/images/5-Workshop/5.2-Prerequisite/IAM_name_and_check.jpeg)
+4. Click **Next**.Select **Attach policies directly** → check **AdministratorAccess**.
+![overview](/images/5-Workshop/5.2-Prerequisite/IAM_attach.jpeg)
+5. Click **Next** → **Create user**.
+![overview](/images/5-Workshop/5.2-Prerequisite/IAM_click_create.jpeg)
+6. Click into the new user → **Security credentials** tab → **Assign MFA device**.
+![overview](/images/5-Workshop/5.2-Prerequisite/MFA.jpeg)
+7. Enter name and choose authenticator app
+![overview](/images/5-Workshop/5.2-Prerequisite/Name_Auth.jpeg)
 8. Choose **Authenticator app**, scan the QR code with an app such as Google Authenticator or Authy, and enter two consecutive codes to confirm.
+![overview](/images/5-Workshop/5.2-Prerequisite/Scan_QR.jpeg)
 9. Sign out of the root user. From now on, sign in as this IAM user for all work in this workshop.
 
 #### Install and Configure the AWS CLI
