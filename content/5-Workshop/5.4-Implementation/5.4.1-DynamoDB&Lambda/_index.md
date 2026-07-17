@@ -14,44 +14,7 @@ Create the storage layer (DynamoDB table with a GSI for date-based queries) and 
 
 terraform/modules/data/main.tf defines the table with on-demand billing, encryption at rest, point-in-time recovery, and a GSI for date-range queries:
 
-```hcl
-resource "aws_dynamodb_table" "summarizer" {
-  name         = "${var.project_name}-${var.table_name}"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "user_id"
-  range_key    = "timestamp"
-
-  attribute {
-    name = "user_id"
-    type = "S"
-  }
-  attribute {
-    name = "timestamp"
-    type = "S"
-  }
-  # summary_date is written as YYYY-MM-DD by the summarizer Lambda.
-  # The weekly report Lambda uses this GSI to fetch all records in a
-  # date range across all users (one Query per day, up to 7 for a week).
-  attribute {
-    name = "summary_date"
-    type = "S"
-  }
-
-  server_side_encryption {
-    enabled = true
-  }
-  point_in_time_recovery {
-    enabled = true
-  }
-
-  global_secondary_index {
-    name            = "summary-date-index"
-    hash_key        = "summary_date"
-    range_key       = "timestamp"
-    projection_type = "ALL"
-  }
-}
-```
+![overview](/images/5-Workshop/5.4-S3-onprem/The_DynamoDB_Table.jpeg)
 
 PAY_PER_REQUEST billing means no idle cost and no capacity planning — reads/writes are billed per request, which fits a project with unpredictable, low-volume traffic. Point-in-time recovery lets the table be restored to any point in the last 35 days if data is accidentally deleted.
 
@@ -61,63 +24,13 @@ The GSI on summary_date exists specifically for the weekly report Lambda (Sectio
 
 terraform/modules/compute/main.tf builds the role with an assume-role policy scoped to the Lambda service, then attaches an inline policy built from discrete, resource-scoped statements — no wildcard actions, no wildcard resources beyond what cross-region Bedrock inference requires:
 
-```hcl
-data "aws_iam_policy_document" "lambda_permissions" {
-  statement {
-    sid     = "Bedrock"
-    actions = ["bedrock:InvokeModel"]
-    # Cross-region inference profile routes to multiple US regions
-    # (us-east-1, us-west-2, etc.) — IAM check fires against whichever
-    # region actually handles the call
-    resources = [
-      "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0",
-      "arn:aws:bedrock:us-east-1:*:inference-profile/us.amazon.nova-lite-v1:0",
-    ]
-  }
-
-  statement {
-    sid     = "DynamoDB"
-    actions = ["dynamodb:PutItem", "dynamodb:Query"]
-    resources = [var.dynamodb_table_arn]
-  }
-
-  statement {
-    sid       = "CloudWatch"
-    actions   = ["cloudwatch:PutMetricData"]
-    resources = ["*"]
-  }
-}
-```
+![overview](/images/5-Workshop/5.4-S3-onprem/The_DynamoDB_Table.jpeg)
 
 Three points worth calling out in the report: the DynamoDB statement only allows PutItem and Query — no Scan, no DeleteItem — because that's all the Lambda's two code paths (handle_summarize, handle_history) ever call. The Bedrock resource list is two ARNs, not a wildcard, matched to the exact model and inference profile in use. PutMetricData needs a * resource because CloudWatch custom metrics don't support resource-level ARNs — this is a CloudWatch API limitation, not a scoping choice.
 
 #### Step 3 — The Lambda Function (Terraform)
 
-```hcl
-resource "aws_cloudwatch_log_group" "lambda" {
-  name              = "/aws/lambda/${var.project_name}-summarizer"
-  retention_in_days = 7
-}
-
-resource "aws_lambda_function" "summarizer" {
-  function_name = "${var.project_name}-summarizer"
-  role          = aws_iam_role.lambda_exec.arn
-  filename      = var.lambda_zip_path
-  handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.12"
-  timeout       = 30
-  memory_size   = 256
-
-  environment {
-    variables = {
-      DYNAMODB_TABLE   = var.dynamodb_table_name
-      BEDROCK_MODEL_ID = "us.amazon.nova-lite-v1:0"
-    }
-  }
-
-  depends_on = [aws_cloudwatch_log_group.lambda]
-}
-```
+![overview](images/5-Workshop/5.4-S3-onprem/CloudWatchCloudWatch.jpeg)
 
 The log group is created explicitly and depended on before the function, rather than letting Lambda auto-create it — this fixes its retention at 7 days from the start instead of defaulting to "never expire."
 
@@ -136,19 +49,7 @@ The Lambda itself runs in ap-southeast-1, but the Bedrock client is hardcoded to
 
 Error handling distinguishes daily-quota exhaustion from transient errors:
 
-```python
-is_daily_quota = (
-    error_code == 'ThrottlingException'
-    and ('daily' in error_msg or 'per day' in error_msg or 'toomanytokens' in error_msg)
-)
-if is_daily_quota:
-    raise DailyQuotaExceededError(str(e))
-
-if error_code in ['ThrottlingException', 'ModelTimeoutException'] and attempt < max_retries - 1:
-    sleep_time = 2 ** attempt
-    time.sleep(sleep_time)
-    continue
-```
+![overview](/images/5-Workshop/5.4-S3-onprem/daily_quotaquota.jpeg)
 
 Transient throttling retries up to 3 times with exponential backoff (1s, 2s, 4s). A daily quota error is detected separately and fails fast instead of retrying — retrying a quota error just burns the Lambda's 30-second timeout window for no benefit, since the quota won't reset mid-request.
 

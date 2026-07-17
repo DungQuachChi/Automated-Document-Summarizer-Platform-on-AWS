@@ -35,17 +35,26 @@ Never use the root user for regular work. Create a personal administrator user i
 ```bash
    aws --version
 ```
-3. Create an access key for your IAM user: IAM console → your user → **Security credentials** tab → **Create access key** → choose **Command Line Interface (CLI)** → confirm → **Create access key**. Copy the **Access Key ID** and **Secret Access Key** — the secret is only shown once.
-4. Configure a named profile (avoid the default profile, so multiple AWS accounts/users don't conflict on the same machine):
+3. Create an access key for your IAM user: IAM console → your user → 
+![overview](/images/5-Workshop/5.2-Prerequisite/click_new_user.jpeg)
+4. **Security credentials** tab → **Create access key** → 
+![overview](/images/5-Workshop/5.2-Prerequisite/sercurity_crea.jpeg)
+![overview](/images/5-Workshop/5.2-Prerequisite/access_key.jpeg)
+5. choose **Command Line Interface (CLI)** → confirm → **Create access key**. 
+![overview](/images/5-Workshop/5.2-Prerequisite/checked_CLI.jpeg)
+![overview](images/5-Workshop/5.2-Prerequisite/clickCreate_AccessKey.jpeg)
+6. Copy the **Access Key ID** and **Secret Access Key** — the secret is only shown once.
+![overview](/images/5-Workshop/5.2-Prerequisite/download_key.jpeg)
+7. Configure a named profile (avoid the default profile, so multiple AWS accounts/users don't conflict on the same machine):
 ```bash
    aws configure --profile yourname
 ```
-5. Enter:
+8. Enter:
    - **AWS Access Key ID** — from step 3
    - **AWS Secret Access Key** — from step 3
    - **Default region** — \ap-southeast-1\
    - **Default output format** — \json\
-6. Verify the profile works:
+9. Verify the profile works:
 ```bash
    aws sts get-caller-identity --profile yourname
 ```
@@ -66,18 +75,6 @@ Never use the root user for regular work. Create a personal administrator user i
    git --version
 ```
 
-#### Request Amazon Bedrock Model Access
-
-Bedrock requires explicit access approval per model before your Lambda function can call it.
-
-1. Open the AWS Console and search for **Amazon Bedrock**.
-2. In the left menu, click **Model access**.
-3. Click **Modify model access**.
-4. Find **Amazon Nova Lite** and check the box next to it.
-5. Click **Save changes**.
-6. Wait 5–10 minutes. Status changes from **Available** to **Access granted**.
-
-If your account is new, you may see an on-demand quota of **0** for this model even after access is granted. This is a separate limit from model access — it controls how many requests per second you can send. If you hit this, open a case with **AWS Support** → **Service Quotas** to request an increase. This workshop's MOCK_SUMMARIZE flag exists specifically to work around this while a quota increase is pending.
 
 #### Clone the Repository
 

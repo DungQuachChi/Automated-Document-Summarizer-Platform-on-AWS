@@ -13,32 +13,38 @@ Set up Amazon Cognito to handle user sign-up, login, and JWT token issuance thro
 #### Step 1 — Start Creating a User Pool
 
 1. Open the **Cognito** console.
+![picture](/images/5-Workshop/5.4-S3-onprem/cognito.jpeg)
 2. Click **Create user pool**.
+![picture](/images/5-Workshop/5.4-S3-onprem/create_user_pool.jpeg)
 3. On the **Configure options** screen, under **Options for sign-in identifiers**, check **Email**. Leave **Phone number** and **Username** unchecked.
+![picture](/images/5-Workshop/5.4-S3-onprem/checked_email.jpeg)
 4. Under **Self-registration**, leave **Enable self-registration** checked.
-5. Under **Required attributes for sign-up**, leave blank.
-6. Under **Add a return URL**, enter:
-   ```
-   http://localhost:8000
-   ```
-7. Scroll down and choose any development platform option (this only affects a code sample that isn't used in this project).
-8. Click **Create** / **Continue**.
+![picture](/images/5-Workshop/5.4-S3-onprem/self.jpeg)
+5. Under **Add a return URL**, enter:
+![picture](/images/5-Workshop/5.4-S3-onprem/url.jpeg)
+6. Scroll down and choose any development platform option .
+![picture](/images/5-Workshop/5.4-S3-onprem/python_platform.jpeg)
+7. Click **Create user directory**.
+![picture](/images/5-Workshop/5.4-S3-onprem/click_create.jpeg)
 
 AWS creates the pool immediately with an auto-generated name (e.g. User pool - nwdtvm). This is expected — it's renamed in the next step.
 
 #### Step 2 — Rename the User Pool and App Client
 
 1. From the success screen, click the **Amazon Cognito** breadcrumb to return to the pool list.
+![picture](/images/5-Workshop/5.4-S3-onprem/cognito.jpeg)
 2. Click into the new pool.
+![picture](/images/5-Workshop/5.4-S3-onprem/user_pool.jpeg)
 3. On the **User pool overview** tab, click the pencil icon next to the pool name. Rename to:
-   ```
-   doc-summarizer-user-pool
-   ```
-4. Go to the **App integration** tab → **App clients and analytics** → click into the auto-created app client.
+![picture](/images/5-Workshop/5.4-S3-onprem/remane_pool.jpeg)
+![picture](/images/5-Workshop/5.4-S3-onprem/name_pool.jpeg)
+4. Go to the **App integration** tab → **App clients and analytics** 
+![picture](/images/5-Workshop/5.4-S3-onprem/app_client.jpeg)
+5. Click into the created app client.
+![picture](/images/5-Workshop/5.4-S3-onprem/Create_client.jpeg)
 5. Click **Edit**, rename to:
-   ```
-   doc-summarizer-app-client
-   ```
+![picture](/images/5-Workshop/5.4-S3-onprem/edit_client.jpeg)
+![picture](/images/5-Workshop/5.4-S3-onprem/client_name.jpeg)
 
 #### Step 3 — Verify Sign-In and Sign-Up Defaults
 

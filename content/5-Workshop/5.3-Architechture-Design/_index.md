@@ -8,33 +8,7 @@ pre : " <b> 5.3. </b> "
 
 #### End-to-End Dataflow
 
-    User Browser
-         |
-         | (1) Load static site
-         v
-    CloudFront ──── serves ──── S3 (static frontend bucket)
-         |
-         | (2) Sign in
-         v
-    Cognito Hosted UI ──── issues JWT token
-         |
-         | (3) API request + JWT + API key
-         v
-    API Gateway ──── validates JWT (Cognito authorizer) ──── enforces usage plan (API key)
-         |
-         | (4) Verified request
-         v
-    Lambda
-         |
-         |──── (5) Calls Bedrock (us-east-1, cross-region inference) ──── or returns mock if MOCK_SUMMARIZE=true
-         |──── (6) Stores result in DynamoDB (SummarizerTable)
-         |──── (7) Emits custom metric to CloudWatch (Custom/Bedrock namespace)
-         |
-         | (8) Returns summary to user
-         v
-    User Browser
-         |
-    CloudWatch Alarms ──── breach ──── SNS Topic ──── email
+![overview](/images/5-Workshop/5.2-Prerequisite/end_to_endend.jpeg)
 
 #### CI/CD Pipeline Path
 

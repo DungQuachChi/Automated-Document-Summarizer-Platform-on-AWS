@@ -6,7 +6,7 @@ chapter: false
 pre: " <b> 5. </b> "
 ---
 
-# Project: Building a Secure Serverless AI Pipeline on AWS
+# Project: Infrastructure as Code for a Secure Serverless AI Workload on AWS
 
 This workshop is a DevOps and Cloud Engineering project that uses AI document summarizer as the vehicle to teach secure serverless architecture, Infrastructure as Code, CI/CD automation, and observability on AWS.
 
