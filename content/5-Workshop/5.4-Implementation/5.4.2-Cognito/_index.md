@@ -46,60 +46,56 @@ AWS creates the pool immediately with an auto-generated name (e.g. User pool - n
 ![picture](/images/5-Workshop/5.4-S3-onprem/edit_client.jpeg)
 ![picture](/images/5-Workshop/5.4-S3-onprem/client_name.jpeg)
 
-#### Step 3 — Verify Sign-In and Sign-Up Defaults
+#### Step 3 — Configure the App Client's OAuth Settings
 
-1. **Sign-in experience** tab → confirm password policy requires a minimum of **8 characters**.
-2. **Sign-up experience** tab → confirm email verification is enabled.
-3. **Messaging** tab → default Cognito-managed email is used, no changes needed.
+1. ** ** tab → click into doc-summarizer-app-client.
+![picture](/images/5-Workshop/5.4-S3-onprem/click_appClient.jpeg)
 
-#### Step 4 — Set Up the Hosted UI Domain
+2. Find **Login pages configuration** → **Edit**.
+![picture](/images/5-Workshop/5.4-S3-onprem/login_config.jpeg)
 
-1. In the left sidebar, click **Branding** → **Domain**.
-2. Click **Actions** → **Create Cognito domain** (or edit an existing placeholder).
-3. Enter the domain prefix:
-   ```
-   pathbridger
-   ```
-4. Click **Save changes**.
-
-This produces the full Hosted UI domain:
-```
-pathbridger.auth.ap-southeast-1.amazoncognito.com
-```
-
-#### Step 5 — Configure the App Client's OAuth Settings
-
-1. **App integration** tab → click into doc-summarizer-app-client.
-2. Find **Hosted UI** / **Login pages configuration** → **Edit**.
 3. Under **Allowed callback URLs**, confirm http://localhost:8000 is present.
+![picture](/images/5-Workshop/5.4-S3-onprem/allow_callback_url.jpeg)
+
 4. Under **OAuth 2.0 grant types**, confirm **Authorization code grant** is selected.
+![picture](/images/5-Workshop/5.4-S3-onprem/Oauth2.jpeg)
+
 5. Under **OpenID Connect scopes**, confirm **Email**, **OpenID**, and **Profile** are all selected.
+![picture](/images/5-Workshop/5.4-S3-onprem/openID.jpeg)
+
 6. Under **Identity providers**, confirm **Cognito user pool** is selected.
+![picture](/images/5-Workshop/5.4-S3-onprem/iden_pro.jpeg)
+
 7. Click **Save changes**.
+![picture](/images/5-Workshop/5.4-S3-onprem/save_change.jpeg)
 
-#### Step 6 — Enable USER_PASSWORD_AUTH for Automated Testing
 
-The Hosted UI flow (Steps 1–5) is used by real users signing in through a browser. Automated load tests (Section 5.6) can't drive a browser redirect, so a second auth flow is needed for scripted access.
+#### Step 4 — Enable USER_PASSWORD_AUTH for Automated Testing
+
+The Hosted UI flow    is used by real users signing in through a browser. Automated load tests (Section 5.6) can't drive a browser redirect, so a second auth flow is needed for scripted access.
 
 1. Still inside doc-summarizer-app-client, find the **Authentication flows** section → **Edit**.
+![picture](/images/5-Workshop/5.4-S3-onprem/Edit_appclient.jpeg)
+
 2. Check **ALLOW_USER_PASSWORD_AUTH** and **ALLOW_REFRESH_TOKEN_AUTH**.
+![picture](/images/5-Workshop/5.4-S3-onprem/auth_flow.jpeg)
+
 3. Click **Save changes**.
+![picture](/images/5-Workshop/5.4-S3-onprem/save_authflow.jpeg)
+
 
 This enables the InitiateAuth API (called directly via boto3, unauthenticated/unsigned), which is distinct from the Hosted UI's /oauth2/token endpoint — that endpoint only accepts authorization_code/refresh_token grants and rejects grant_type=password.
 
-#### Step 7 — Note Your Cognito Values
+#### Step 6 — Note Your Cognito Values
 
 1. **User pool overview** tab → note the **User pool ID**.
+![picture](/images/5-Workshop/5.4-S3-onprem/pool_id.jpeg)
+
 2. **App clients** tab → click the app client → note the **Client ID**.
+![picture](/images/5-Workshop/5.4-S3-onprem/client_id.jpeg)
+
 3. **App integration** tab → **Domain** section → note the **Cognito domain**.
-
-| Value | Actual value |
-|---|---|
-| User pool ID | ap-southeast-1_Uo593E4hR |
-| Client ID | 7mfke3ntkous3rbvpbqpu7c2nb |
-| Cognito domain | pathbridger.auth.ap-southeast-1.amazoncognito.com |
-
-**How to verify:** Click **View login page** from the pool overview — this opens the live Hosted UI sign-in screen for doc-summarizer-app-client. A working page here confirms the domain and app client are correctly linked.
+![picture](/images/5-Workshop/5.4-S3-onprem/domain_cog.jpeg)
 
 #### How JWT Authentication Works
 
