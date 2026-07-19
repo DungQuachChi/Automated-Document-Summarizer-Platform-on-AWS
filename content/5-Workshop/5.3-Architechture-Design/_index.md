@@ -8,7 +8,7 @@ pre : " <b> 5.3. </b> "
 
 #### End-to-End Dataflow
 
-![overview](/images/5-Workshop/5.2-Prerequisite/end_to_endend.jpeg)
+![overview](/images/5-Workshop/5.3-Architechture-Design/project_arch.jpeg)
 
 #### CI/CD Pipeline Path
 
