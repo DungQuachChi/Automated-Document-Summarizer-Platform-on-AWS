@@ -8,98 +8,102 @@ pre : " <b> 5.4.5. </b> "
 
 #### Goal
 
-Host the static frontend (frontend/index.html, frontend/script.js) on S3, serve it securely through CloudFront, and update Cognito and CORS settings to trust the new domain. This module is not yet deployed at the time of writing — the steps below are what needs to happen, not a record of what's already live.
+Host the static frontend (frontend/index.html, frontend/script.js) on S3, serve it through CloudFront, and propagate the resulting domain to Cognito and API Gateway automatically via Terraform output wiring — no manual console updates to either service.
 
-#### Step 1 — Create the S3 Bucket
+#### Terraform Resources
 
-1. Open the **S3** console → **Create bucket**.
-2. Bucket name: doc-summarizer-frontend-YOUR_ACCOUNT_ID (S3 bucket names must be globally unique — the account ID suffix avoids collisions with other workshop readers).
-3. Region: ap-southeast-1.
-4. Under **Block Public Access settings**, leave all four boxes checked (block all public access). The bucket will be reached only through CloudFront, never directly.
-5. Click **Create bucket**.
-6. Upload frontend/index.html and frontend/script.js (and any other static assets) to the bucket root.
+modules/frontend creates:
 
-#### Step 2 — Create a CloudFront Distribution with Origin Access Control
+- aws_s3_bucket — private bucket, no static website hosting, no public access. All four aws_s3_bucket_public_access_block settings are enabled.
+- aws_s3_bucket_server_side_encryption_configuration — AES256 at rest.
+- aws_cloudfront_origin_access_control — OAC, the current recommended pattern (replaces the deprecated OAI). CloudFront authenticates to S3 with SigV4; the bucket stays fully private.
+- aws_cloudfront_distribution — single origin pointed at the bucket via OAC, index.html as the default root object, HTTP redirected to HTTPS, PriceClass_100 (US/Canada/Europe edges only — cheapest tier, appropriate for a low-traffic learning project).
+- aws_iam_policy_document + aws_s3_bucket_policy — grants cloudfront.amazonaws.com s3:GetObject, scoped with an AWS:SourceArn condition to this specific distribution's ARN, so no other CloudFront distribution in the account (or anyone else's) can read the bucket.
 
-1. Open the **CloudFront** console → **Create distribution**.
-2. **Origin domain**: select the S3 bucket created in Step 1.
-3. **Origin access**: select **Origin access control settings (recommended)** → **Create new OAC** → accept the defaults → **Create**.
-4. **Viewer protocol policy**: **Redirect HTTP to HTTPS**.
-5. **Default root object**: index.html.
-6. Click **Create distribution**. Note the **Distribution domain name** — this becomes the frontend's public URL, e.g. [FILL IN: distribution domain name, e.g. dxxxxxxxxxxxxx.cloudfront.net].
+Three items are deliberately left out and marked with tfsec:ignore comments with a stated reason: bucket versioning/logging, CloudFront access logging, and a WAF Web ACL. Each carries an ongoing storage or per-request cost not justified at this project's traffic level. The TLS policy is also left at the CloudFront default, since a custom minimum TLS version requires an ACM certificate on a purchased domain — out of scope for a *.cloudfront.net deployment.
 
-#### Step 3 — Update the S3 Bucket Policy
+#### Cross-Module Wiring
 
-CloudFront's OAC needs explicit permission to read from the bucket. After creating the distribution, CloudFront shows a banner offering to update the bucket policy automatically.
+This is the part that matters for the CI/CD story: the frontend's domain name isn't a value you copy-paste into other consoles. modules/frontend/outputs.tf exposes it —
 
-1. Return to the CloudFront distribution → click the banner **Copy policy** (or **Go to S3 bucket permissions**).
-2. If not applied automatically, open the S3 bucket → **Permissions** tab → **Bucket policy** → **Edit** → paste the policy CloudFront generated, replacing YOUR_DISTRIBUTION_ID and YOUR_BUCKET_NAME with actual values:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowCloudFrontServicePrincipal",
-      "Effect": "Allow",
-      "Principal": { "Service": "cloudfront.amazonaws.com" },
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*",
-      "Condition": {
-        "StringEquals": {
-          "AWS:SourceArn": "arn:aws:cloudfront::YOUR_ACCOUNT_ID:distribution/YOUR_DISTRIBUTION_ID"
-        }
-      }
-    }
-  ]
+```hcl
+output "cloudfront_domain_name" {
+  value = aws_cloudfront_distribution.frontend.domain_name
 }
 ```
 
-3. Click **Save changes**.
+— and the root main.tf passes that output directly into two other modules:
 
-**How to verify:** Open the CloudFront distribution domain name in a browser. The frontend loads. A direct request to the S3 bucket's object URL (bypassing CloudFront) returns AccessDenied.
+```hcl
+module "auth" {
+  source = "./modules/auth"
+  cloudfront_domain_name = module.frontend.cloudfront_domain_name
+  # ...
+}
 
-#### Step 4 — Wire script.js to the Real API URL
+module "api" {
+  source = "./modules/api"
+  cloudfront_domain_name = module.frontend.cloudfront_domain_name
+  # ...
+}
+```
 
-1. Open frontend/script.js.
-2. Set the API base URL to the API Gateway invoke URL from Section 4.3:
+Inside modules/auth, that value builds the Cognito app client's callback and logout URLs:
+
+```hcl
+callback_urls = ["http://localhost:8000", "https://${var.cloudfront_domain_name}"]
+logout_urls   = ["http://localhost:8000/", "https://${var.cloudfront_domain_name}/"]
+```
+
+Inside modules/api, the same value locks down CORS on both /summarize and /history:
+
+```hcl
+"method.response.header.Access-Control-Allow-Origin" = "'https://${var.cloudfront_domain_name}'"
+```
+
+localhost:8000 stays alongside the CloudFront domain in Cognito's callback list, so local development keeps working after the real domain goes live. CORS, by contrast, is locked to the CloudFront domain only — the API doesn't need to accept requests from arbitrary local origins in the same way auth redirects do.
+
+Terraform resolves the dependency graph from these references alone — frontend doesn't need to appear earlier in the file for auth and api to wait for it. One terraform apply provisions the bucket and distribution, reads the resulting domain name, and pushes it into the Cognito app client and both API Gateway CORS configs in the same run. There is no separate manual step to "update Cognito callback URLs" or "lock CORS to the real domain" after the fact — that's the difference between wiring an output through the module graph and re-entering the same value by hand in two consoles.
+
+#### Applying
+
+```bash
+terraform apply
+```
+
+Note the two relevant outputs:
+
+```bash
+terraform output cloudfront_domain_name
+```
+
+#### Deploying the Frontend Files
+
+The bucket and distribution are infrastructure; the HTML/JS files themselves are application content and aren't Terraform-managed resources here, so they're uploaded directly:
+
+1. Set the real API endpoint in frontend/script.js:
    ```js
    const API_BASE_URL = "https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1";
    ```
-3. Set the API key (from Section 4.3, Step 5) and Cognito values (from Section 4.2, Step 7) as needed by the frontend's auth handling.
-4. Re-upload the updated script.js to the S3 bucket (Step 1).
-5. Create a CloudFront invalidation so the new file is served immediately instead of a cached old version:
-   - CloudFront console → distribution → **Invalidations** tab → **Create invalidation** → path /script.js (or /* to invalidate everything) → **Create invalidation**.
-
-#### Step 5 — Update Cognito Callback URLs
-
-The Cognito app client currently only trusts http://localhost:8000 as a callback URL (Section 4.2). Once the frontend has a real domain, that domain needs to be added so sign-in redirects work from the live site.
-
-1. Cognito console → doc-summarizer-user-pool → **App integration** → doc-summarizer-app-client → **Hosted UI** → **Edit**.
-2. Under **Allowed callback URLs**, click **Add another URL** and add:
+2. Upload both files to the bucket root:
+   ```bash
+   aws s3 cp frontend/index.html s3://$(terraform output -raw frontend_bucket_name)/
+   aws s3 cp frontend/script.js  s3://$(terraform output -raw frontend_bucket_name)/
    ```
-   https://[FILL IN: your CloudFront distribution domain name]
+3. Invalidate the CloudFront cache so the new files serve immediately instead of a stale cached version:
+   ```bash
+   aws cloudfront create-invalidation \
+     --distribution-id $(terraform output -raw cloudfront_distribution_id) \
+     --paths "/*"
    ```
-3. Click **Save changes**.
-4. Keep the localhost entry alongside it — useful for continued local development.
 
-#### Step 6 — Lock CORS to the Real Domain
-
-API Gateway's CORS configuration was set to Access-Control-Allow-Origin: '*' during initial development (Section 4.3). This is a reasonable default while there's no real frontend domain yet, but it should be tightened once one exists — a wildcard origin means any website can call this API from a user's browser.
-
-1. API Gateway console → doc-summarizer-api → select the /summarize resource → **CORS** → **Edit**.
-2. Change **Access-Control-Allow-Origin** from * to:
-   ```
-   https://[FILL IN: your CloudFront distribution domain name]
-   ```
-3. Repeat for /history.
-4. Click **Deploy API** → stage v1 to apply the change.
+**How to verify:** open the CloudFront distribution domain in a browser — the frontend loads and sign-in redirects back correctly. A direct request to the S3 object URL (bypassing CloudFront) returns AccessDenied, confirming the bucket is unreachable except through the OAC-authenticated distribution.
 
 #### Common Errors and Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
-| AccessDenied when loading the CloudFront URL | Bucket policy wasn't updated to trust the distribution's OAC | Repeat Step 3, confirm the distribution ID and bucket name in the policy are correct |
-| Frontend loads but API calls fail with a CORS error in the browser console | CORS origin locked to the CloudFront domain, but the request is coming from localhost during testing, or vice versa | Keep both origins allowed during development, or test consistently from the same origin the CORS policy trusts |
-| Old script.js still being served after re-upload | CloudFront caches objects at edge locations | Create a CloudFront invalidation (Step 4) after every frontend file update |
-| Cognito Hosted UI redirects to a blank/error page after sign-in from the live site | CloudFront domain not yet added to Cognito's allowed callback URLs | Complete Step 5 |
+| AccessDenied when loading the CloudFront URL | Bucket policy's AWS:SourceArn condition doesn't match the actual distribution ARN — usually from applying the frontend module before it exists yet, or a stale plan | terraform apply again; the policy is generated from aws_cloudfront_distribution.frontend.arn, so it self-corrects once the distribution exists |
+| Frontend loads but API calls fail with a CORS error | Request origin doesn't match cloudfront_domain_name at apply time — happens if you're testing from localhost while CORS is locked to the CloudFront domain | Test from the CloudFront domain, or re-check what value cloudfront_domain_name resolved to at the last apply |
+| Old script.js still served after re-upload | CloudFront caches objects at edge locations | Re-run the invalidation step after every frontend file update |
+| Cognito Hosted UI redirects to a blank/error page after sign-in | terraform apply hasn't run since the frontend module was added, so Cognito's callback URL list doesn't include the CloudFront domain yet | terraform apply — no manual Cognito console edit needed |

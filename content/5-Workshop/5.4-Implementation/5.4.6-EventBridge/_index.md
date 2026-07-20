@@ -8,129 +8,71 @@ pre : " <b> 5.4.6. </b> "
 
 #### Goal
 
-Automatically generate a weekly report of summarization activity, using EventBridge to trigger a dedicated Lambda function on a schedule, with output stored in S3 and transitioned to cheaper storage over time.
+Generate a weekly report of summarization activity automatically: EventBridge triggers a dedicated Lambda on a schedule, the Lambda queries the last 7 days of activity via the summary-date-index GSI, and the result is written to S3 as a CSV, with older reports moved to cheaper storage over time.
 
-#### Step 1 — Create the S3 Reports Bucket
+#### Terraform Resources
 
-1. Open the **S3** console → **Create bucket**.
-2. Bucket name: doc-summarizer-reports-YOUR_ACCOUNT_ID (globally unique, suffixed with your account ID).
-3. Region: ap-southeast-1.
-4. Leave **Block Public Access settings** fully checked — reports are accessed by the report Lambda and by direct download, never publicly.
-5. Under **Default encryption**, select **Server-side encryption with Amazon S3 managed keys (SSE-S3)** — this is AES256 encryption.
-6. Click **Create bucket**.
+The reports bucket is defined in modules/data, alongside the main table (Section 4.1) — not in the scheduling module itself, since it's data storage rather than a scheduling concern:
 
-#### Step 2 — Add a Lifecycle Rule
+- aws_s3_bucket — ${project_name}-reports-${account_id}, private, SSE-S3 encryption, all public access blocked.
+- aws_s3_bucket_lifecycle_configuration — one rule, archive-to-glacier, transitioning all objects to GLACIER storage class 30 days after creation.
 
-Reports older than 30 days move to Glacier, where storage is significantly cheaper — appropriate for records that are rarely accessed after the first month but still worth retaining.
+modules/scheduling defines the compute and trigger side:
 
-1. Open the bucket → **Management** tab → **Create lifecycle rule**.
-2. Rule name: reports-glacier-transition.
-3. Rule scope: **Apply to all objects in the bucket**.
-4. Under **Lifecycle rule actions**, check **Move current versions of objects between storage classes**.
-5. Add a transition: **30 days after object creation** → **Glacier Flexible Retrieval**.
-6. Click **Create rule**.
+- aws_iam_role + aws_iam_role_policy for the report Lambda, scoped to exactly three things: writing its own CloudWatch logs, dynamodb:Query against the table and the GSI specifically (not the whole table, and not Scan), and s3:PutObject against the reports bucket. The s3:PutObject resource is ${reports_bucket_arn}/* rather than a specific key, since report keys are date-generated at runtime (reports/weekly-report-{date}.csv) and can't be known in advance — the ignored tfsec wildcard warning is scoped to this one bucket only, not account-wide.
+- aws_lambda_function — Python 3.12, 60-second timeout, 256 MB memory, packaged from report_lambda/ via archive_file.
+- aws_cloudwatch_event_rule — schedule_expression = "cron(0 8 ? * MON *)", state = "ENABLED".
+- aws_cloudwatch_event_target — binds the rule to the Lambda function ARN.
+- aws_lambda_permission — grants events.amazonaws.com lambda:InvokeFunction, scoped to this rule's ARN via source_arn. Without this, the rule fires but Lambda silently refuses the invocation.
 
-**How to verify:** The **Management** tab lists reports-glacier-transition with status **Enabled**.
+Applying modules/scheduling and modules/data provisions all of this in one pass — the rule, the target, and the invoke permission are created together, so there's no separate step where the schedule exists but nothing is wired to it.
 
-#### Step 3 — Create the IAM Role for the Report Lambda
+#### Report Lambda Logic
 
-1. **IAM** console → **Roles** → **Create role**.
-2. Trusted entity: **AWS service** → **Lambda**. Click **Next**.
-3. Skip attaching managed policies. Click **Next**.
-4. Role name: doc-summarizer-report-lambda-role. Click **Create role**.
-5. Click into the role → **Add permissions** → **Create inline policy** → **JSON** tab:
+report_lambda/report_handler.py, in outline:
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "logs:CreateLogGroup",
-      "Resource": "arn:aws:logs:ap-southeast-1:YOUR_ACCOUNT_ID:*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
-      "Resource": "arn:aws:logs:ap-southeast-1:YOUR_ACCOUNT_ID:log-group:/aws/lambda/doc-summarizer-report-fn:*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["dynamodb:Query"],
-      "Resource": [
-        "arn:aws:dynamodb:ap-southeast-1:YOUR_ACCOUNT_ID:table/SummarizerTable",
-        "arn:aws:dynamodb:ap-southeast-1:YOUR_ACCOUNT_ID:table/SummarizerTable/index/summary-date-index"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["s3:PutObject"],
-      "Resource": "arn:aws:s3:::doc-summarizer-reports-YOUR_ACCOUNT_ID/*"
-    }
-  ]
-}
+1. get_last_7_days_dates() builds seven YYYY-MM-DD strings.
+2. For each date, query_dynamodb_by_date() queries summary-date-index with KeyConditionExpression: summary_date = :date, paginating on LastEvaluatedKey in case a single day's results exceed 1 MB.
+3. aggregate_by_user() groups results by user_id, skipping any item missing user_id or original_text, and accumulates request count plus total original/summary text length per user.
+4. generate_csv() writes one row per user: user_id, total_requests, avg_original_length, avg_summary_length, first_request_time, last_request_time.
+5. The CSV is uploaded to reports/weekly-report-{today's date}.csv in the reports bucket.
+6. If no items are found for the past 7 days, the function returns early with a 200 and a "no data" message rather than uploading an empty report.
+
+Environment variables are DYNAMODB_TABLE and REPORT_BUCKET (singular — not REPORTS_BUCKET), set from Terraform outputs (module.data.table_name, module.data.reports_bucket_name), so there's no risk of the Lambda's env var drifting from the bucket Terraform actually created.
+
+Logging is structured JSON (a small JSONLogger wrapper around logging), not print statements — each log line carries a level, message, and relevant context (date queried, item counts, error detail on failure), which is what CloudWatch Logs Insights queries against in Section 5.4.8.
+
+#### Applying
+
+```bash
+terraform apply
 ```
 
-6. Click **Next**, name it doc-summarizer-report-lambda-policy, click **Create policy**.
+#### Testing Manually
 
-The summary-date-index GSI (built in Section 4.1) is what makes this efficient — the report Lambda queries by date range instead of scanning the entire table.
+Rather than waiting for the next Monday 08:00 UTC run:
 
-#### Step 4 — Create the Report Lambda Function
+```bash
+aws lambda invoke \
+  --function-name $(terraform output -raw report_lambda_function_name) \
+  --payload '{}' \
+  response.json
+cat response.json
+```
 
-1. **Lambda** console → **Create function**.
-2. Fill in:
+Then confirm the object landed in S3:
 
-   | Field | Value |
-   |---|---|
-   | Function name | doc-summarizer-report-fn |
-   | Runtime | Python 3.12 |
-   | Architecture | x86_64 |
+```bash
+aws s3 ls s3://$(terraform output -raw reports_bucket_name)/reports/
+```
 
-3. Under **Permissions**, select **Use an existing role** → doc-summarizer-report-lambda-role.
-4. Click **Create function**.
-5. **Configuration** → **General configuration** → **Edit** → set **Timeout** to 60 sec (queries + report generation can take longer than a single summarization call). Set **Memory** to 256 MB. Click **Save**.
-6. **Configuration** → **Environment variables** → add:
-
-   | Key | Value |
-   |---|---|
-   | DYNAMODB_TABLE | SummarizerTable |
-   | REPORTS_BUCKET | doc-summarizer-reports-YOUR_ACCOUNT_ID |
-
-7. **Code** tab → paste the report generation logic (queries summary-date-index for the past 7 days, aggregates counts/summary lengths, writes a report object to the reports bucket) → **Deploy**.
-
-#### Step 5 — Create the EventBridge Schedule
-
-1. Open the **EventBridge** console → **Rules** → **Create rule**.
-2. Name: doc-summarizer-weekly-report.
-3. Rule type: **Schedule**.
-4. Click **Next**.
-5. Schedule pattern: **A fine-grained schedule** → **Cron-based schedule**:
-   ```
-   cron(0 8 ? * MON *)
-   ```
-   This runs every Monday at 08:00 UTC.
-6. Click **Next**.
-7. Target: **AWS Lambda function** → doc-summarizer-report-fn.
-8. Click **Next** → **Next** → **Create rule**.
-
-**How to verify:** The rule shows **State: Enabled** and **Next scheduled run** with a Monday 08:00 UTC date.
-
-#### Step 6 — Test Manually
-
-Rather than waiting until the next Monday, invoke the report Lambda directly to confirm the pipeline works end to end.
-
-1. **Lambda** console → doc-summarizer-report-fn → **Test** tab.
-2. Create a test event with an empty JSON body {} (EventBridge schedule triggers pass no meaningful payload).
-3. Click **Test**.
-4. Open the **S3** reports bucket → confirm a new report object appears.
-
-**How to verify:** Execution result: succeeded, and the reports bucket contains a newly created object with a recent timestamp in its key or metadata.
+**How to verify:** response.json shows "statusCode": 200, and the reports bucket contains a new weekly-report-{date}.csv object. If the past 7 days have no real activity (for example, while running under MOCK_BEDROCK=true with no live summarize calls), the function still returns 200 with a "no data to report" body — that's expected behavior, not a failure.
 
 #### Common Errors and Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
-| EventBridge rule shows **Next scheduled run** but Lambda never executes | Missing lambda:InvokeFunction resource-based permission for EventBridge to invoke the function | Lambda console → function → **Configuration** → **Permissions** → confirm a resource-based policy statement exists for events.amazonaws.com; if not, recreate the rule target and accept the "Add permission" prompt |
-| Report Lambda times out | Query pattern falls back to a full table scan instead of using the GSI | Confirm the code queries summary-date-index with a KeyConditionExpression, not table.scan() |
-| AccessDenied writing to S3 | Bucket name in REPORTS_BUCKET doesn't match the IAM policy resource ARN | Confirm both use the exact same bucket name including the account ID suffix |
-| Reports appear but never transition to Glacier | Lifecycle rule wasn't created, or objects are younger than 30 days | Confirm the lifecycle rule (Step 2) is **Enabled**; transitions only apply after the 30-day threshold |
+| EventBridge rule shows a next scheduled run, but the Lambda never executes | aws_lambda_permission wasn't applied, or was later removed manually outside Terraform | terraform plan should show no drift; if it does, terraform apply to restore it — the permission is templated to this one rule's ARN, not a wildcard |
+| Report Lambda times out | Query pattern isn't matching the GSI's key schema, and DynamoDB silently returns empty pages instead of the expected date's items until pagination logic loops longer than expected | Confirm the GSI's partition key is summary_date (Section 4.1) and that items are actually being written with that attribute set |
+| AccessDenied writing to S3 | REPORT_BUCKET env var doesn't match the bucket the IAM policy scopes to | Both come from the same Terraform output (module.data.reports_bucket_name) — if they've drifted, something was changed manually outside Terraform; re-apply |
+| Reports never transition to Glacier | Objects are younger than the 30-day threshold, or the lifecycle rule isn't enabled | aws s3api get-bucket-lifecycle-configuration --bucket <reports-bucket> — confirm archive-to-glacier shows "Status": "Enabled" |

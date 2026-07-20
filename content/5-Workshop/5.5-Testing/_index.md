@@ -8,7 +8,7 @@ pre : " <b> 5.5. </b> "
 
 #### Logs
 
-**Lambda logs.** Every invocation of doc-summarizer-fn and doc-summarizer-report-fn writes to CloudWatch Logs automatically (via the logs:CreateLogGroup/logs:PutLogEvents permissions granted in Section 4.1 and 4.6).
+**Lambda logs.** Every invocation of doc-summarizer-fn and doc-summarizer-report-fn writes to CloudWatch Logs automatically (via the logs:CreateLogGroup/logs:PutLogEvents permissions granted in Sections 4.1 and 4.6).
 
 1. **CloudWatch** console → **Log groups** → /aws/lambda/doc-summarizer-fn.
 2. Click into the most recent log stream to see individual invocation output, including the print() statements in the Lambda code (e.g. Bedrock API Error: ... when a call fails).
@@ -86,7 +86,7 @@ curl https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1/history \
   -H "Authorization: YOUR-ID-TOKEN" \
   -H "x-api-key: YOUR-API-KEY"
 ```
-Expected: 200 with a history array containing prior entries for this user.
+Expected: 200 with a `history` array containing prior entries for this user.
 
 **5. Input validation boundaries:**
 ```bash
@@ -119,10 +119,28 @@ moto intercepts boto3 calls and simulates DynamoDB in-memory, so these tests run
 
 #### Load Testing
 
-locustfile.py drives load against the real deployed API using two AWS-specific pieces of setup that a generic Locust script wouldn't need:
+locustfile.py can run in two distinct modes, and it's important to know which one produced a given result before drawing conclusions from it:
 
-- **Auth**: calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 (unauthenticated/unsigned API call) — not the Hosted UI's /oauth2/token endpoint, which only accepts authorization_code/refresh_token grants.
-- **API key**: every request includes the x-api-key header required by the usage plan (Section 4.3).
+- **MOCK_MODE=true** (the default) — auth is skipped in favor of a fixed placeholder Bearer token, and requests go wherever --host points. This is for exercising the request/response contract and concurrency handling without depending on Cognito or Bedrock being available.
+- **MOCK_MODE=false** — the script calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 (an unauthenticated/unsigned API call, not the Hosted UI's /oauth2/token endpoint, which only accepts authorization_code/refresh_token grants) to get a real JWT, and every request carries the real x-api-key header. This is the only mode that actually exercises Bedrock.
+
+**Mock-mode baseline** (auth mocked; target is whatever --host is set to — the local Flask/gunicorn stand-in on localhost:8000, or the real API Gateway endpoint with MOCK_BEDROCK enabled server-side):
+
+| Users | Total requests | Avg | p95 | p99 | Failures |
+|---|---|---|---|---|---|
+| 10 | 150 | 4 ms | 6 ms | 7 ms | 0% |
+| 50 | 11,363 | 4 ms | 5 ms | 7 ms | 0% |
+
+The 50-user run held steady at ~24 req/s with zero failures across /health, /history, and /summarize for the full ramp-and-hold duration — response times don't degrade with 5x the concurrent users, which indicates the bottleneck found below is specific to real Bedrock calls, not the request handling, auth path, or DynamoDB access pattern.
+
+**Running it:**
+```bash
+pip install boto3 locust --break-system-packages
+locust -f locustfile.py --headless -u 50 -r 1 --run-time 60s --host <target-host>
+```
+Set `--host` to `http://localhost:8000` for the mock server, or the real API Gateway invoke URL to test mock-mode auth against the live endpoint.
+
+**Real-API setup** (MOCK_MODE=false), for exercising the actual Bedrock-backed path:
 
 1. Create a test Cognito user for load testing:
    ```bash
@@ -144,16 +162,15 @@ locustfile.py drives load against the real deployed API using two AWS-specific p
    TEST_PASSWORD=YourStrongPass123!
    API_KEY=<value from: terraform output -raw api_key_value>
    ```
-3. Run Locust:
+3. Run Locust against the real endpoint:
    ```bash
-   pip install boto3 locust --break-system-packages
    locust -f locustfile.py --host https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1
    ```
 4. Open the Locust web UI (default `http://localhost:8089`), set number of users and ramp-up rate, start the test.
 
 **What "good" looks like:** GET /history should show 0 failures with a low median latency (sub-500ms is reasonable for a DynamoDB query behind API Gateway + Lambda). POST /summarize latency depends entirely on Bedrock — a healthy result is consistent 2xx responses in the low single-digit seconds.
 
-**A real finding from this project's load testing:** a run of 5 concurrent users ramping at 1/sec showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds — API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic (Section 4.1) was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. This is documented here as a real example of a load test surfacing a design issue that a single manual curl request never would have — the fix (fast-failing on daily-quota errors specifically, rather than retrying them) is the retry logic shown in Section 4.1.
+**A real finding from this project's load testing:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds — API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic (Section 4.1) was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause — 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue. The fix (fast-failing on daily-quota errors specifically, rather than retrying them) is the retry logic shown in Section 4.1.
 
 #### Common Errors and Fixes
 
@@ -163,3 +180,4 @@ locustfile.py drives load against the real deployed API using two AWS-specific p
 | API Gateway execution logs stay empty even after enabling them per-stage | Missing account-level CloudWatch Logs role for API Gateway | Set **API Gateway → Settings → CloudWatch log role ARN** to a role with logs:* permissions |
 | Locust InitiateAuth fails with NotAuthorizedException | Test user password wasn't set as permanent, or USER_PASSWORD_AUTH isn't enabled on the app client | Confirm admin-set-user-password --permanent was used, and that Section 4.2 Step 6 (auth flows) was completed |
 | POST /summarize consistently times out around 29s under load | Bedrock retry logic burning the full Lambda timeout on quota errors | Confirm the daily-quota fast-fail path from Section 4.1 is deployed, not an older version without it |
+| A locust run reports mode: MOCK in its startup log | MOCK_MODE env var (or its default) is true | Expected for a mock-path baseline; if a real-API result was intended, set MOCK_MODE=false and confirm .env.test is loaded before re-running |
