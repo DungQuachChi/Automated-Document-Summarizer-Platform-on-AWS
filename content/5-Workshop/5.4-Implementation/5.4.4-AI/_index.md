@@ -8,44 +8,38 @@ pre : " <b> 5.4.4. </b> "
 
 #### Goal
 
-Request access to the Amazon Nova Lite model in Bedrock, understand how the Lambda function (built in Section 4.1) calls it, and cover what happens when the account's on-demand quota runs out.
+Request access to the Amazon Nova Lite model in Bedrock, understand how the deployed Lambda calls it, and cover what happens when the account's on-demand quota runs out.
 
-#### Step 1 — Request Model Access
+#### Terraform Wiring: IAM and Model ID
 
-Bedrock requires explicit access approval per model before any Lambda can call it — this is separate from IAM permissions.
+Model access approval happens in the console (it's an account-level grant, not a Terraform resource), but everything downstream of it is code:
 
-1. Open the AWS Console and search for **Amazon Bedrock**.
-2. In the left menu, click **Model access**.
-3. Click **Modify model access**.
-4. Find **Amazon Nova Lite** and check the box next to it.
-5. Click **Save changes**.
-6. Wait 5–10 minutes. Status changes from **Available** to **Access granted**.
+- `modules/compute`'s IAM policy scopes `bedrock:InvokeModel` to exactly two resources: the foundation model ARN (`arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0`) and the cross-region inference profile ARN (`arn:aws:bedrock:us-east-1:*:inference-profile/us.amazon.nova-lite-v1:0`) — not a wildcard across all Bedrock models.
+- `BEDROCK_MODEL_ID = "us.amazon.nova-lite-v1:0"` is set as a Lambda environment variable in Terraform, not hardcoded in the Python file — the `us.` prefix identifies this as a cross-region inference profile rather than a single-region model ID, which matters for the next point.
 
-**How to verify:** The **Model access** page shows **Access granted** next to Amazon Nova Lite.
+#### Cross-Region Requirement
 
-#### Step 2 — Understand the Cross-Region Requirement
-
-ap-southeast-1 is not in the AP inference pool for Nova Lite. The Lambda function's Bedrock client is hardcoded to call us-east-1 instead, using the model ID us.amazon.nova-lite-v1:0 — the us. prefix identifies this as a cross-region inference profile rather than a single-region model ID.
-
-Lambda itself continues to run in ap-southeast-1; only the Bedrock API call crosses regions. This is already wired into the Lambda code from Section 4.1:
+ap-southeast-1 is not in the AP inference pool for Nova Lite. The Lambda's Bedrock client is hardcoded to call `us-east-1` instead:
 
 ```python
 bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
 ```
 
-#### Step 3 — Test a Real Bedrock Call
+Lambda itself continues to run in ap-southeast-1 (Section 4.1); only the Bedrock API call crosses regions.
 
-1. Open the **Lambda** console → doc-summarizer-fn → **Test** tab.
-2. Re-run the TestSummarize event created in Section 4.1, Step 8.
-3. If model access was granted in Step 1 and the IAM policy from Section 4.1 includes bedrock:InvokeModel, this now returns a real AI-generated summary instead of failing.
+#### Test a Real Bedrock Call
 
-**How to verify:** The response body contains a summary field with coherent, on-topic text — not a fixed placeholder string.
+1. Open the **Lambda** console → `doc-summarizer-fn` → **Test** tab.
+2. Re-run the `TestSummarize` event created in Section 4.1.
+3. If model access was granted in Step 1, this now returns a real AI-generated summary instead of failing.
+
+**How to verify:** The response body contains a `summary` field with coherent, on-topic text — not a fixed placeholder string.
 
 #### The Quota Story: When On-Demand Quota Hits Zero
 
 New AWS accounts are sometimes provisioned with an on-demand quota of **zero requests per second** for a given Bedrock model, even after model access itself is granted. This is a separate limit from model access, and it's a genuine account-level restriction, not a bug anywhere in this project's code.
 
-This is exactly what happened on this project's AWS account. Every call to /summarize failed with a ThrottlingException, and the Lambda's retry logic (Section 4.1) correctly detected the daily-quota pattern in the error message and fast-failed rather than burning the full 30-second timeout on pointless retries:
+This is exactly what happened on this project's AWS account. Every call to `/summarize` failed with a `ThrottlingException`, and the Lambda's retry logic correctly detected the daily-quota pattern in the error message and fast-failed rather than burning the full 30-second timeout on pointless retries:
 
 ```python
 is_daily_quota = (
@@ -54,32 +48,33 @@ is_daily_quota = (
 )
 ```
 
+For anything else classified as retriable (`ThrottlingException` without the daily-quota pattern, or `ModelTimeoutException`), the Lambda retries with backoff, up to `max_retries` attempts.
+
 **Resolution path:** an AWS Support case was filed under **Service Quotas** requesting an increase for the Nova Lite on-demand quota in us-east-1. Quota increase requests are not instant — they can take from a few hours to a few days depending on account history and usage justification.
 
-#### Working Around the Quota Gap: MOCK_SUMMARIZE
+#### The Deployed Lambda Has No Mock Path
 
-While waiting for the quota increase, development and testing needed to continue. The fix was a feature flag, MOCK_SUMMARIZE, on the **local FastAPI development app** — not on the deployed Lambda function. This is an important distinction:
+`doc-summarizer-fn` always calls the real Bedrock endpoint — there's no environment variable or code branch that substitutes a canned response. If the account has zero quota, real requests to the deployed API genuinely fail with a 429, exactly as shown to an end user. Nothing about the deployed system's behavior is faked to work around the quota gap.
 
-- **Deployed Lambda (doc-summarizer-fn)** — always calls the real Bedrock endpoint. There is no mock path inside the Lambda itself. If the account has zero quota, real requests to the deployed API will genuinely fail with a 429, as shown to the end user.
-- **Local FastAPI app** — used for local development and frontend integration testing without touching AWS at all. When MOCK_SUMMARIZE=true, it returns a canned summary instead of calling Bedrock, so a developer can build and test the rest of the flow (request validation, response shape, frontend rendering) independent of AWS quota, cost, or network access.
-
-This split matters for the workshop's narrative: the deployed system is honest about the quota limitation — it returns a real 429 error to real users, rather than silently mocking data in production. The mock path only exists in the local dev loop, where hiding the AI call is a legitimate and common practice for fast iteration.
+**Correction needed on the local dev side:** an earlier version of this section described a `MOCK_SUMMARIZE` flag toggling a local FastAPI app between mock and real Bedrock calls. That flag doesn't exist in the current code. `app/bedrock_client.py`'s `get_summary()` is hardcoded to always return a mock string — there's no env var and no real-call branch — and that FastAPI app (SQLAlchemy, a `Document` model, no Cognito/JWT, no DynamoDB) looks like a separate early prototype rather than a mock layer sitting in front of the same system described elsewhere in this workshop. Before publishing this section, decide which of these is true and write to that:
+- If the FastAPI app is meant to be a genuine local mock-toggle for the deployed system, it needs an actual `MOCK_SUMMARIZE` env var and a real-Bedrock code path added.
+- If it's an earlier prototype that's no longer part of the current architecture, this section should say so plainly instead of describing a feature that isn't there.
 
 #### How to Verify the 429 Path
 
-1. If your account currently has zero on-demand quota, call /summarize on the deployed API (see Section 5 for exact curl commands).
+1. If your account currently has zero on-demand quota, call `/summarize` on the deployed API (Section 5.5 has exact curl commands).
 2. Confirm the response is:
    ```json
    {"message": "Summarization limit reached for today. Please try again after midnight UTC."}
    ```
    with HTTP status 429.
-3. Check the **CloudWatch** console → **Metrics** → **Custom/Bedrock** namespace → BedrockErrors metric, dimension ErrorType = DailyQuotaExceeded. A data point here confirms the Lambda correctly classified and reported the quota error rather than treating it as a generic failure.
+3. Check the **CloudWatch** console → **Metrics** → `Custom/Bedrock` namespace → `BedrockErrors` metric, dimension `ErrorType = DailyQuotaExceeded`. A data point here confirms the Lambda correctly classified and reported the quota error rather than treating it as a generic failure.
 
 #### Common Errors and Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
-| AccessDeniedException calling Bedrock | Model access not yet granted, or IAM role missing bedrock:InvokeModel | Complete Step 1; confirm the IAM policy from Section 4.1 includes the Bedrock statement |
-| ValidationException: model identifier is invalid | Wrong model ID format used | Confirm BEDROCK_MODEL_ID is exactly us.amazon.nova-lite-v1:0, including the us. prefix |
-| 429 on every request, even right after requesting access | On-demand quota is separate from model access and defaults to 0 on some new accounts | File an AWS Support case under Service Quotas; use MOCK_SUMMARIZE locally in the meantime |
-| Lambda call succeeds locally (mocked) but fails when deployed | Local FastAPI app and deployed Lambda are two different code paths — mocking one doesn't affect the other | Expected behavior; see the MOCK_SUMMARIZE distinction above |
+| `AccessDeniedException` calling Bedrock | Model access not yet granted, or the IAM policy's resource ARNs don't match the model/profile actually being called | Complete Step 1; confirm `BEDROCK_MODEL_ID` matches one of the two ARNs scoped in the compute module's IAM policy |
+| `ValidationException: model identifier is invalid` | Wrong model ID format used | Confirm `BEDROCK_MODEL_ID` is exactly `us.amazon.nova-lite-v1:0`, including the `us.` prefix |
+| 429 on every request, even right after requesting access | On-demand quota is separate from model access and defaults to 0 on some new accounts | File an AWS Support case under Service Quotas |
+| Local FastAPI app always returns a mock summary, even after setting an env var | No such env var exists in the current `app/bedrock_client.py` — the mock return is unconditional | Either add the toggle, or stop describing this app as configurable until it is |

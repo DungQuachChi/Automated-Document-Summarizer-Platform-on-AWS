@@ -8,112 +8,56 @@ pre : " <b> 5.4.2. </b> "
 
 #### Goal
 
-Set up Amazon Cognito to handle user sign-up, login, and JWT token issuance through a Hosted UI, so the API never has to handle passwords directly.
+Set up Amazon Cognito to handle user sign-up, login, and JWT token issuance, so the API never has to handle passwords directly — and support two distinct ways of authenticating: the Hosted UI for real users, and a direct password-based flow for automated load testing.
 
-#### Step 1 — Start Creating a User Pool
+#### Terraform Resources
 
-1. Open the **Cognito** console.
-![picture](/images/5-Workshop/5.4-S3-onprem/cognito.jpeg)
-2. Click **Create user pool**.
-![picture](/images/5-Workshop/5.4-S3-onprem/create_user_pool.jpeg)
-3. On the **Configure options** screen, under **Options for sign-in identifiers**, check **Email**. Leave **Phone number** and **Username** unchecked.
-![picture](/images/5-Workshop/5.4-S3-onprem/checked_email.jpeg)
-4. Under **Self-registration**, leave **Enable self-registration** checked.
-![picture](/images/5-Workshop/5.4-S3-onprem/self.jpeg)
-5. Under **Add a return URL**, enter:
-![picture](/images/5-Workshop/5.4-S3-onprem/url.jpeg)
-6. Scroll down and choose any development platform option .
-![picture](/images/5-Workshop/5.4-S3-onprem/python_platform.jpeg)
-7. Click **Create user directory**.
-![picture](/images/5-Workshop/5.4-S3-onprem/click_create.jpeg)
+modules/auth creates:
 
-AWS creates the pool immediately with an auto-generated name (e.g. User pool - nwdtvm). This is expected — it's renamed in the next step.
+- aws_cognito_user_pool — username_attributes = ["email"] (sign in by email, no separate username), auto_verified_attributes = ["email"] (verification codes sent automatically on sign-up). A strong password policy is set explicitly: minimum length 8, requiring lowercase, uppercase, numbers, and symbols. Account recovery goes through verified_email only. advanced_security_mode = "ENFORCED" turns on Cognito's risk-based adaptive authentication — it evaluates sign-in attempts for compromised-credential and unusual-activity signals and can require additional challenges, without any extra code on the app side.
+- aws_cognito_user_pool_client — a public client (generate_secret = false, appropriate since the frontend is static JS with no secure place to store a client secret). explicit_auth_flows includes both ALLOW_USER_PASSWORD_AUTH and ALLOW_REFRESH_TOKEN_AUTH — both are declared in code from the start, not added as a separate step later. allowed_oauth_flows = ["code"] restricts the Hosted UI to the authorization code grant (no implicit grant). Scopes are email, openid, profile. callback_urls and logout_urls include http://localhost:8000 for local development, plus the CloudFront domain wired in automatically from modules.frontend.cloudfront_domain_name (Section 5.4.5) — that domain isn't typed into the console by hand.
+- aws_cognito_user_pool_domain — the Hosted UI domain prefix (pathbridger), set via a variable rather than hardcoded, so a fresh deployment under a different account or prefix doesn't require editing this module.
 
-#### Step 2 — Rename the User Pool and App Client
+Self-registration isn't a checkbox to enable — a Cognito user pool allows public sign-up by default unless admin_create_user_config.allow_admin_create_user_only is explicitly set to true, which this module doesn't do. So "self-registration enabled" here just means the module doesn't turn it off.
 
-1. From the success screen, click the **Amazon Cognito** breadcrumb to return to the pool list.
-![picture](/images/5-Workshop/5.4-S3-onprem/cognito.jpeg)
-2. Click into the new pool.
-![picture](/images/5-Workshop/5.4-S3-onprem/user_pool.jpeg)
-3. On the **User pool overview** tab, click the pencil icon next to the pool name. Rename to:
-![picture](/images/5-Workshop/5.4-S3-onprem/remane_pool.jpeg)
-![picture](/images/5-Workshop/5.4-S3-onprem/name_pool.jpeg)
-4. Go to the **App integration** tab → **App clients and analytics** 
-![picture](/images/5-Workshop/5.4-S3-onprem/app_client.jpeg)
-5. Click into the created app client.
-![picture](/images/5-Workshop/5.4-S3-onprem/Create_client.jpeg)
-5. Click **Edit**, rename to:
-![picture](/images/5-Workshop/5.4-S3-onprem/edit_client.jpeg)
-![picture](/images/5-Workshop/5.4-S3-onprem/client_name.jpeg)
+Both authentication paths this app needs — Hosted UI for the frontend, InitiateAuth/USER_PASSWORD_AUTH for Locust (Section 5.5) — come from the same explicit_auth_flows list above. There's no separate console toggle to flip after the fact for load testing to work; it's already permitted by the pool's Terraform configuration.
 
-#### Step 3 — Configure the App Client's OAuth Settings
+#### Applying
 
-1. ** ** tab → click into doc-summarizer-app-client.
-![picture](/images/5-Workshop/5.4-S3-onprem/click_appClient.jpeg)
+```bash
+terraform apply
+```
 
-2. Find **Login pages configuration** → **Edit**.
-![picture](/images/5-Workshop/5.4-S3-onprem/login_config.jpeg)
+Then pull the values everything downstream needs:
 
-3. Under **Allowed callback URLs**, confirm http://localhost:8000 is present.
-![picture](/images/5-Workshop/5.4-S3-onprem/allow_callback_url.jpeg)
+```bash
+terraform output user_pool_id
+terraform output client_id
+terraform output hosted_ui_domain
+```
 
-4. Under **OAuth 2.0 grant types**, confirm **Authorization code grant** is selected.
-![picture](/images/5-Workshop/5.4-S3-onprem/Oauth2.jpeg)
-
-5. Under **OpenID Connect scopes**, confirm **Email**, **OpenID**, and **Profile** are all selected.
-![picture](/images/5-Workshop/5.4-S3-onprem/openID.jpeg)
-
-6. Under **Identity providers**, confirm **Cognito user pool** is selected.
-![picture](/images/5-Workshop/5.4-S3-onprem/iden_pro.jpeg)
-
-7. Click **Save changes**.
-![picture](/images/5-Workshop/5.4-S3-onprem/save_change.jpeg)
-
-
-#### Step 4 — Enable USER_PASSWORD_AUTH for Automated Testing
-
-The Hosted UI flow    is used by real users signing in through a browser. Automated load tests (Section 5.6) can't drive a browser redirect, so a second auth flow is needed for scripted access.
-
-1. Still inside doc-summarizer-app-client, find the **Authentication flows** section → **Edit**.
-![picture](/images/5-Workshop/5.4-S3-onprem/Edit_appclient.jpeg)
-
-2. Check **ALLOW_USER_PASSWORD_AUTH** and **ALLOW_REFRESH_TOKEN_AUTH**.
-![picture](/images/5-Workshop/5.4-S3-onprem/auth_flow.jpeg)
-
-3. Click **Save changes**.
-![picture](/images/5-Workshop/5.4-S3-onprem/save_authflow.jpeg)
-
-
-This enables the InitiateAuth API (called directly via boto3, unauthenticated/unsigned), which is distinct from the Hosted UI's /oauth2/token endpoint — that endpoint only accepts authorization_code/refresh_token grants and rejects grant_type=password.
-
-#### Step 6 — Note Your Cognito Values
-
-1. **User pool overview** tab → note the **User pool ID**.
-![picture](/images/5-Workshop/5.4-S3-onprem/pool_id.jpeg)
-
-2. **App clients** tab → click the app client → note the **Client ID**.
-![picture](/images/5-Workshop/5.4-S3-onprem/client_id.jpeg)
-
-3. **App integration** tab → **Domain** section → note the **Cognito domain**.
-![picture](/images/5-Workshop/5.4-S3-onprem/domain_cog.jpeg)
+`hosted_ui_domain` is computed in `outputs.tf` as `${domain}.auth.${aws_region}.amazoncognito.com` — not a value you need to piece together manually from two different console screens.
 
 #### How JWT Authentication Works
 
-1. Browser redirects to the Hosted UI at pathbridger.auth.ap-southeast-1.amazoncognito.com.
+1. Browser redirects to the Hosted UI at `pathbridger.auth.ap-southeast-1.amazoncognito.com`.
 2. User signs in with email and password.
-3. Cognito verifies credentials.
+3. Cognito verifies credentials (and, since `advanced_security_mode` is `ENFORCED`, evaluates the sign-in for risk signals).
 4. Cognito redirects back with an authorization code.
-5. The app exchanges the code for a JWT (id_token) at the /oauth2/token endpoint.
-6. The JWT is sent as the Authorization header on every API call.
+5. The app exchanges the code for a JWT (`id_token`) at the `/oauth2/token` endpoint.
+6. The JWT is sent as the `Authorization` header on every API call.
 7. API Gateway's Cognito authorizer validates the token before invoking Lambda.
 
-The JWT's sub claim becomes the user_id used in DynamoDB (see Section 4.1), ensuring each user only sees their own history.
+The JWT's `sub` claim becomes the `user_id` used in DynamoDB (Section 4.1), ensuring each user only sees their own history.
+
+For scripted/load-test access (Section 5.5), the same user pool supports a second path that skips the Hosted UI entirely: `InitiateAuth` with `USER_PASSWORD_AUTH`, called directly via boto3. This is a distinct, unauthenticated Cognito Identity Provider API call — not the Hosted UI's `/oauth2/token` endpoint, which only accepts `authorization_code`/`refresh_token` grants and rejects `grant_type=password`. Both paths are valid because `explicit_auth_flows` declares both flows on the same app client.
 
 #### Common Errors and Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
-| Red warning "you must select at least one sign-in identifier" | No sign-in option checked on the Configure options screen | Check **Email** before continuing |
-| invalid_request on the Hosted UI login page | Callback URL in the app client doesn't match what the app is using | Confirm **Allowed callback URLs** exactly matches http://localhost:8000 |
-| grant_type=password returns 400 from /oauth2/token | The Hosted UI's OAuth token endpoint only supports authorization_code/refresh_token | Use InitiateAuth with USER_PASSWORD_AUTH instead (Step 6) — this is a separate, unauthenticated Cognito Identity Provider API, not the Hosted UI endpoint |
-| Domain step shows no "Create Cognito domain" option | Already viewing App Integration inside the app client rather than the user pool level | Navigate to **Branding → Domain** at the user pool level, not inside the app client's login pages config |
+| `invalid_request` on the Hosted UI login page | The URL being used to reach the Hosted UI doesn't match an entry in `callback_urls` | Confirm the app is redirecting to exactly `http://localhost:8000` or the CloudFront domain — both are in the Terraform-managed list, but a typo or extra path segment won't match |
+| `grant_type=password` returns 400 from `/oauth2/token` | The Hosted UI's OAuth token endpoint only supports `authorization_code`/`refresh_token` | Use `InitiateAuth` with `USER_PASSWORD_AUTH` instead — a separate, unauthenticated Cognito Identity Provider API, not the Hosted UI endpoint |
+| `NotAuthorizedException` from `InitiateAuth` | `ALLOW_USER_PASSWORD_AUTH` isn't actually present on the deployed app client — usually from applying an older version of this module before the flow was added | `terraform plan` should show no drift on `explicit_auth_flows`; re-apply if it does |
+| Sign-in redirects to a blank/error page after Hosted UI login | The domain the request came from isn't yet in `callback_urls` — happens if `terraform apply` hasn't run since the frontend module (and its CloudFront domain output) was added | `terraform apply` — no manual Cognito console edit needed, the callback URL list is derived from `module.frontend.cloudfront_domain_name` |
+| Domain prefix `pathbridger` fails to create | Prefix is already taken globally (Cognito domain prefixes are unique across all AWS accounts) or was recently released and hasn't fully freed up yet (Section 5.6) | Choose a different `cognito_domain_prefix` value, or wait a few minutes if this is a re-deploy after a recent `terraform destroy` |    
