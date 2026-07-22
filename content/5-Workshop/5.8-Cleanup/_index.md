@@ -1,9 +1,9 @@
 ---
 title : "Clean Up"
 date : 2026-07-14
-weight : 6
+weight : 8
 chapter : false
-pre : " <b> 5.6. </b> "
+pre : " <b> 5.8. </b> "
 ---
 
 #### Teardown Order 
