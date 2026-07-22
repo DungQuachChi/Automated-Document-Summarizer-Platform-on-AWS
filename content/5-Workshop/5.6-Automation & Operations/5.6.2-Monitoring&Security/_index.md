@@ -8,11 +8,11 @@ pre : " 5.6.2. "
 
 #### Goal
 
-Visibility into the running system (dashboard, alarms, custom metrics) and a security/compliance baseline (audit logging, configuration rules).
+Visibility into the running system (dashboard, alarms, custom metrics) and a security/compliance baseline.
 
 #### Custom Metrics
 
-src/lambda_fn/lambda_function.py publishes to Custom/Bedrock around every model call (Section 5.4.2) — Latency, SuccessCount, and on failure BedrockErrors dimensioned by ErrorType.
+src/lambda_fn/lambda_function.py publishes to Custom/Bedrock around every model call: Latency, SuccessCount, and on failure BedrockErrors dimensioned by ErrorType.
 
 #### Alarms (modules/monitoring)
 
@@ -32,11 +32,11 @@ One aws_cloudwatch_dashboard resource, six widgets — Lambda invocations/errors
 #### CloudTrail & AWS Config (modules/security)
 
 - Multi-region CloudTrail, log file validation, dedicated encrypted/private S3 bucket, also streamed to CloudWatch Logs.
-- AWS Config recorder tracks all supported resource types including global (IAM), with the CIS v1.4 Level 1 conformance pack (44 rules).
+- AWS Config recorder tracks all supported resource types including global (IAM), with the CIS v1.4 Level 1 conformance pack.
 
 **Current compliance: 60%**, with two accepted, documented gaps rather than hidden ones:
-- CodeBuild's IAM role uses AdministratorAccess (Section 5.6.1).
-- MFA isn't enforced account-wide via IAM policy (enabled on the individual admin user, not conditionally required for all users).
+- CodeBuild's IAM role uses AdministratorAccess.
+- MFA isn't enforced account-wide via IAM policy.
 
 Both are revisited in Section 6.2 (Simple Security Hardening) — the point of running Config here is an accurate picture, not a clean scorecard.
 

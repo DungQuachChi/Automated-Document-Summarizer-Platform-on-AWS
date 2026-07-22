@@ -12,9 +12,9 @@ Set up Cognito to issue and validate JWTs, and API Gateway to enforce that token
 
 #### Cognito (`modules/auth`)
 
-- aws_cognito_user_pool — email as the sign-in identifier, strong password policy, advanced_security_mode = "ENFORCED" (Cognito's risk-based adaptive auth — compromised-credential and unusual-activity detection, zero extra app code). Self-registration is on by default.
-- aws_cognito_user_pool_client — public client (generate_secret = false, correct for a static JS frontend). explicit_auth_flows declares both ALLOW_USER_PASSWORD_AUTH and ALLOW_REFRESH_TOKEN_AUTH from the start — the Hosted UI path and the direct load-test auth path (Section 5.7) work off the same client with no later toggle.
-- aws_cognito_user_pool_domain — Hosted UI domain prefix (pathbridger), set via variable.
+- aws_cognito_user_pool: email as the sign-in identifier, strong password policy, advanced_security_mode = "ENFORCED" (Cognito's risk-based adaptive auth — compromised-credential and unusual-activity detection, zero extra app code). Self-registration is on by default.
+- aws_cognito_user_pool_client: public client. explicit_auth_flows declares both ALLOW_USER_PASSWORD_AUTH and ALLOW_REFRESH_TOKEN_AUTH from the start. The Hosted UI path and the direct load-test auth path work off the same client with no later toggle.
+- aws_cognito_user_pool_domain: Hosted UI domain prefix, set via variable.
 
 #### API Gateway (modules/api)
 
@@ -39,7 +39,7 @@ terraform output -raw api_key_value
 
 Browser → Hosted UI login → Cognito verifies (risk-evaluated) → redirect with auth code → app exchanges code for JWT at /oauth2/token → JWT sent as Authorization header on every API call → API Gateway's Cognito authorizer validates before invoking Lambda. The JWT's sub claim becomes user_id in DynamoDB, scoping each user to their own history.
 
-For scripted/load-test access, InitiateAuth/USER_PASSWORD_AUTH (direct boto3, not the Hosted UI's token endpoint) is enabled on the same client via explicit_auth_flows — no separate setup needed.
+For scripted/load-test access, InitiateAuth/USER_PASSWORD_AUTH is enabled on the same client via explicit_auth_flows — no separate setup needed.
 
 #### Common Errors and Fixes
 

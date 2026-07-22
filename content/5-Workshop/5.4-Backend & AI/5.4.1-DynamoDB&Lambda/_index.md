@@ -8,7 +8,7 @@ pre : " 5.4.1. "
 
 #### Goal
 
-Build the storage layer (DynamoDB table with a GSI for date-based queries) and the compute layer (a Lambda function with a least-privilege IAM role) that everything else in this workshop connects to — both defined in Terraform (terraform/modules/data, terraform/modules/compute).
+Build the storage layer and the compute layer  that everything else in this workshop connects to both defined in Terraform (terraform/modules/data, terraform/modules/compute).
 
 #### DynamoDB Table
 
@@ -16,17 +16,17 @@ terraform/modules/data/main.tf:
 
 ![overview](/images/5-Workshop/5.4-S3-onprem/The_DynamoDB_Table.jpeg)
 
-- PAY_PER_REQUEST billing — no idle cost, no capacity planning.
-- Encryption at rest, point-in-time recovery (35-day restore window).
-- GSI on summary_date — needed by the weekly report Lambda (Section 5.6.1) to query "all summaries in the last 7 days across all users," which the base table's user_id partition key can't answer efficiently alone.
+- PAY_PER_REQUEST billing: no idle cost, no capacity planning.
+- Encryption at rest, point-in-time recovery .
+- GSI on summary_date: needed by the weekly report Lambda to query "all summaries in the last 7 days across all users," which the base table's user_id partition key can't answer efficiently alone.
 
 #### Lambda IAM Role
 
-terraform/modules/compute/main.tf builds a role scoped to discrete, resource-level statements — no wildcard actions or resources beyond what cross-region Bedrock inference requires:
+Terraform/modules/compute/main.tf builds a role scoped to discrete, resource level statements, no wildcard actions or resources beyond what cross-region Bedrock inference requires:
 
 - DynamoDB: PutItem + Query only — no Scan, no DeleteItem — matching exactly what the two code paths (handle_summarize, handle_history) call.
-- Bedrock: two specific ARNs (foundation model + inference profile), not a wildcard — detailed in Section 5.4.2.
-- cloudwatch:PutMetricData uses a * resource — a CloudWatch API limitation (custom metrics don't support resource-level ARNs), not a scoping choice.
+- Bedrock: two specific ARNs foundation model and inference profile, not a wildcard.
+- Cloudwatch:PutMetricData uses a * resource a CloudWatch API limitation , not a scoping choice.
 
 #### Lambda Function
 

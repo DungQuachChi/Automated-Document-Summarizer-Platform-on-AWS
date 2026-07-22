@@ -8,7 +8,7 @@ pre : " 5.4.2. "
 
 #### Goal
 
-Request access to Amazon Nova Lite in Bedrock, understand how the Lambda (Section 5.4.1) calls it across regions, and handle the account's on-demand quota running out.
+Request access to Amazon Nova Lite in Bedrock, understand how the Lambda calls it across regions, and handle the account's on-demand quota running out.
 
 #### Terraform Wiring: IAM and Model ID
 

@@ -19,7 +19,7 @@ Two things that run on their own once deployed: a scheduled Lambda that generate
 - aws_lambda_function — Python 3.12, 60s timeout, 256MB.
 - aws_cloudwatch_event_rule (cron(0 8 ? * MON *), ENABLED) + aws_cloudwatch_event_target + aws_lambda_permission — all three created together in one apply, so the schedule is never left unwired.
 
-**Report Lambda logic**: queries summary-date-index for each of the last 7 days, aggregates by user_id (count, avg lengths, first/last timestamp), writes one CSV row per user. Env vars come from Terraform outputs, not hand-typed. No activity in the window → returns 200 with a "no data" message rather than an empty file.
+**Report Lambda logic**: queries summary-date-index for each of the last 7 days, aggregates by user_id, writes one CSV row per user. Env vars come from Terraform outputs, not hand-typed. No activity in the window → returns 200 with a "no data" message rather than an empty file.
 
 ```bash
 terraform apply
@@ -40,7 +40,7 @@ The pipeline itself is Terraform (modules/pipeline). The tfplan.binary artifact 
 1. Bootstrap remote state — S3 bucket with versioning + DynamoDB lock table.
 2. The GitHub connection needs a one-time manual authorization: **CodePipeline → Settings → Connections → Update pending connection**.
 
-**IAM:** CodePipeline's own role is scoped narrowly. CodeBuild's role currently uses AdministratorAccess — flagged as a known scope-down item, not hidden (see Section 5.6.2).
+**IAM:** CodePipeline's own role is scoped narrowly. CodeBuild's role currently uses AdministratorAccess — flagged as a known scope-down item, not hidden.
 
 ```bash
 cd terraform && terraform apply

@@ -8,14 +8,14 @@ pre : " 5.5.2. "
 
 #### Goal
 
-Host the static frontend on S3, serve it through CloudFront, and propagate the resulting domain to Cognito and API Gateway (Section 5.5.1) automatically via Terraform output wiring.
+Host the static frontend on S3, serve it through CloudFront, and propagate the resulting domain to Cognito and API Gateway automatically using Terraform output wiring.
 
 #### Terraform Resources
 
 modules/frontend:
 
 - Private aws_s3_bucket (all public access blocked) + aws_cloudfront_distribution with Origin Access Control — CloudFront authenticates to S3 with SigV4, so the bucket stays fully private. HTTP redirected to HTTPS, PriceClass_100.
-- Bucket policy grants cloudfront.amazonaws.com s3:GetObject, scoped via AWS:SourceArn to this distribution only.
+- Bucket policy grants cloudfront.amazonaws.com s3:GetObject, scoped through AWS:SourceArn to this distribution only.
 - Versioning, CloudFront access logging, and a WAF Web ACL are deliberately left out — cost not justified at this project's scale.
 
 #### Cross-Module Wiring
