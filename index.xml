@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Internship Report</title><link>https://workshop-sample.awsfcaj.com/</link><description>Recent content on Internship Report</description><generator>Hugo</generator><language>en</language><lastBuildDate>Mon, 15 Jun 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://workshop-sample.awsfcaj.com/index.xml" rel="self" type="application/rss+xml"/><item><title>Week 12 Worklog</title><link>https://workshop-sample.awsfcaj.com/1-worklog/_index-copy/</link><pubDate>Mon, 15 Jun 2026 00:00:00 +0000</pubDate><guid>https://workshop-sample.awsfcaj.com/1-worklog/_index-copy/</guid><description>&lt;h3 id="week-11-objectives">Week 11 Objectives:&lt;/h3>
+&lt;ul>
+&lt;li>Implement the core serverless compute tier and integrate Amazon Bedrock AI text processing.&lt;/li>
+&lt;li>Configure identity pools for user authentication and build secure API routing networks.&lt;/li>
+&lt;li>Enforce request rate limiting, token validation layers, and cost-optimization caching mechanisms.&lt;/li>
+&lt;/ul>
+&lt;h3 id="tasks-to-be-carried-out-this-week">Tasks to be carried out this week:&lt;/h3>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th style="text-align: left">Day&lt;/th>
+ &lt;th style="text-align: left">Task&lt;/th>
+ &lt;th style="text-align: left">Start Date&lt;/th>
+ &lt;th style="text-align: left">Completion Date&lt;/th>
+ &lt;th style="text-align: left">Reference Material&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td style="text-align: left">2&lt;/td>
+ &lt;td style="text-align: left">- Request model access for Claude 3 Haiku and Titan Text inside &lt;code>us-east-1&lt;/code> &lt;br> - Set up a clean local Python 3.12 environment and write local mock scripts&lt;/td>
+ &lt;td style="text-align: left">2026-06-15&lt;/td>
+ &lt;td style="text-align: left">2026-06-15&lt;/td>
+ &lt;td style="text-align: left">Amazon Bedrock Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">3&lt;/td>
+ &lt;td style="text-align: left">- Code the Lambda function handler logic to invoke the Amazon Bedrock API &lt;br> - Write payload parsing handlers for documents up to 10,000 characters&lt;/td>
+ &lt;td style="text-align: left">2026-06-16&lt;/td>
+ &lt;td style="text-align: left">2026-06-16&lt;/td>
+ &lt;td style="text-align: left">AWS Lambda / Bedrock Integration&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">4&lt;/td>
+ &lt;td style="text-align: left">- Troubleshoot local Boto3 credential configurations &lt;br> - Deploy the single-table DynamoDB instance and integrate Lambda writing hooks&lt;/td>
+ &lt;td style="text-align: left">2026-06-17&lt;/td>
+ &lt;td style="text-align: left">2026-06-17&lt;/td>
+ &lt;td style="text-align: left">Amazon DynamoDB Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">5&lt;/td>
+ &lt;td style="text-align: left">- Provision an &lt;strong>Amazon Cognito User Pool&lt;/strong> with mandatory email verification &lt;br> - Create an App Client and test the user registration flows via the Hosted UI&lt;/td>
+ &lt;td style="text-align: left">2026-06-18&lt;/td>
+ &lt;td style="text-align: left">2026-06-18&lt;/td>
+ &lt;td style="text-align: left">Amazon Cognito Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">6&lt;/td>
+ &lt;td style="text-align: left">- Build the API Gateway REST architecture with &lt;code>/summarize&lt;/code> and &lt;code>/history&lt;/code> routes &lt;br> - Attach a Cognito Authorizer and debug JWT payload validation mismatches &lt;br> - Connect Lambda proxy hooks, deploy usage plans (100 req/min), and enable a 1-hour cache&lt;/td>
+ &lt;td style="text-align: left">2026-06-19&lt;/td>
+ &lt;td style="text-align: left">2026-06-20&lt;/td>
+ &lt;td style="text-align: left">Amazon API Gateway Developer Guide&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h3 id="week-11-achievements">Week 11 Achievements:&lt;/h3>
+&lt;ul>
+&lt;li>
+&lt;p>AI Model Pipeline Isolation: Navigated Amazon Bedrock model processing requests for Claude 3 Haiku and Titan Text. Built robust fallback mock Python structures locally inside an isolated Python 3.12 environment using Boto3 to protect development timelines while model approval was pending.&lt;/p></description></item><item><title>Tuần 12 Worklog</title><link>https://workshop-sample.awsfcaj.com/1-worklog/_indexfull/</link><pubDate>Mon, 15 Jun 2026 00:00:00 +0000</pubDate><guid>https://workshop-sample.awsfcaj.com/1-worklog/_indexfull/</guid><description>&lt;h3 id="mục-tiêu-tuần-12">Mục tiêu Tuần 12:&lt;/h3>
+&lt;ul>
+&lt;li>Triển khai tầng tính toán serverless cốt lõi và tích hợp xử lý văn bản AI bằng Amazon Bedrock.&lt;/li>
+&lt;li>Cấu hình các cụm định danh (identity pools) để xác thực người dùng và xây dựng mạng định tuyến API an toàn.&lt;/li>
+&lt;li>Áp dụng cơ chế giới hạn tốc độ yêu cầu (rate limiting), các tầng xác thực token và cơ chế cache tối ưu hóa chi phí.&lt;/li>
+&lt;/ul>
+&lt;h3 id="các-công-việc-thực-hiện-trong-tuần">Các công việc thực hiện trong tuần:&lt;/h3>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th style="text-align: left">Ngày&lt;/th>
+ &lt;th style="text-align: left">Nhiệm vụ&lt;/th>
+ &lt;th style="text-align: left">Ngày bắt đầu&lt;/th>
+ &lt;th style="text-align: left">Ngày hoàn thành&lt;/th>
+ &lt;th style="text-align: left">Tài liệu tham khảo&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td style="text-align: left">2&lt;/td>
+ &lt;td style="text-align: left">- Yêu cầu cấp quyền truy cập mô hình cho Claude 3 Haiku và Titan Text bên trong vùng &lt;code>us-east-1&lt;/code> &lt;br> - Thiết lập môi trường ảo Python 3.12 sạch tại local và viết các mã script mô phỏng (mock)&lt;/td>
+ &lt;td style="text-align: left">2026-06-15&lt;/td>
+ &lt;td style="text-align: left">2026-06-15&lt;/td>
+ &lt;td style="text-align: left">Amazon Bedrock Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">3&lt;/td>
+ &lt;td style="text-align: left">- Lập trình logic xử lý cho hàm Lambda để gọi API của Amazon Bedrock &lt;br> - Viết các bộ xử lý phân tích payload cho các tài liệu dài lên đến 10.000 ký tự&lt;/td>
+ &lt;td style="text-align: left">2026-06-16&lt;/td>
+ &lt;td style="text-align: left">2026-06-16&lt;/td>
+ &lt;td style="text-align: left">Tích hợp AWS Lambda / Bedrock&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">4&lt;/td>
+ &lt;td style="text-align: left">- Khắc phục các xung đột cấu hình thông tin xác thực Boto3 tại cục bộ &lt;br> - Triển khai thực thể bảng đơn (single-table) DynamoDB và tích hợp các hook ghi dữ liệu từ Lambda&lt;/td>
+ &lt;td style="text-align: left">2026-06-17&lt;/td>
+ &lt;td style="text-align: left">2026-06-17&lt;/td>
+ &lt;td style="text-align: left">Amazon DynamoDB Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">5&lt;/td>
+ &lt;td style="text-align: left">- Khởi tạo một &lt;strong>Amazon Cognito User Pool&lt;/strong> với tính năng bắt buộc xác thực qua email &lt;br> - Tạo một App Client và kiểm thử các luồng đăng ký người dùng thông qua giao diện Hosted UI&lt;/td>
+ &lt;td style="text-align: left">2026-06-18&lt;/td>
+ &lt;td style="text-align: left">2026-06-18&lt;/td>
+ &lt;td style="text-align: left">Amazon Cognito Console&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td style="text-align: left">6&lt;/td>
+ &lt;td style="text-align: left">- Xây dựng cấu trúc API Gateway REST với các tuyến đường dẫn &lt;code>/summarize&lt;/code> và &lt;code>/history&lt;/code> &lt;br> - Đính kèm bộ xác thực Cognito Authorizer và gỡ lỗi sai lệch cấu trúc kiểm tra mã JWT payload &lt;br> - Kết nối các proxy hook của Lambda, triển khai gói giới hạn sử dụng (100 req/phút) và bật bộ nhớ đệm cache 1 giờ&lt;/td>
+ &lt;td style="text-align: left">2026-06-19&lt;/td>
+ &lt;td style="text-align: left">2026-06-20&lt;/td>
+ &lt;td style="text-align: left">Hướng dẫn Nhà phát triển Amazon API Gateway&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h3 id="thành-tựu-tuần-12">Thành tựu Tuần 12:&lt;/h3>
+&lt;ul>
+&lt;li>&lt;strong>Cô lập Pipeline Mô hình AI:&lt;/strong> Điều hướng thành công các yêu cầu xử lý mô hình Amazon Bedrock cho Claude 3 Haiku và Titan Text. Xây dựng các cấu trúc Python giả lập (mock) mạnh mẽ cục bộ bên trong môi trường Python 3.12 độc lập bằng Boto3 để bảo vệ tiến độ phát triển dự án trong khi chờ phê duyệt quyền truy cập mô hình từ AWS.&lt;/li>
+&lt;li>&lt;strong>Kỹ nghệ hóa Payload &amp;amp; Logic Tính toán:&lt;/strong> Phát triển thành công hàm xử lý cốt lõi trên AWS Lambda có khả năng xử lý an toàn các văn bản đầu vào lớn lên đến 10.000 ký tự. Xây dựng các bộ biến đổi đầu vào linh hoạt để ánh xạ chính xác các cấu trúc yêu cầu khác nhau theo quy định của hai công cụ runtime LLM Anthropic và Amazon.&lt;/li>
+&lt;li>&lt;strong>Khởi tạo Cơ sở dữ liệu Đơn bảng (Single-Table):&lt;/strong> Tạo lập cấu trúc đơn bảng DynamoDB cho dự án, tận dụng &lt;code>user_id&lt;/code> làm Khóa phân vùng (Partition Key - PK) và &lt;code>timestamp&lt;/code> làm Khóa sắp xếp (Sort Key - SK). Vượt qua các xung đột về thông tin xác thực trên terminal cục bộ và triển khai các hook ghi dữ liệu tự động bên trong luồng thực thi của Lambda để ghi nhật ký các chỉ số giao dịch một cách mượt mà.&lt;/li>
+&lt;li>&lt;strong>Quản lý Định danh chuẩn OAuth 2.0:&lt;/strong> Cấu hình các đường dẫn đăng ký và làm quen (onboarding) an toàn cho người dùng bằng cách khởi chạy một Amazon Cognito User Pool bắt buộc xác thực qua email. Triển khai một Cognito App Client chuyên dụng hỗ trợ các luồng cấp mã code (authorization code grant flows) và xác thực các quy trình đăng nhập của người dùng sử dụng giao diện Cognito Hosted UI.&lt;/li>
+&lt;li>&lt;strong>Hạ tầng Mạng Định tuyến API An toàn:&lt;/strong> Xây dựng một thực thể Amazon API Gateway REST chuẩn production bao gồm các tuyến tài nguyên &lt;code>/summarize&lt;/code> và &lt;code>/history&lt;/code>. Bảo mật các endpoint bằng bộ xác thực Cognito Authorizer và xử lý thành công lỗi từ chối xác thực token bằng cách truy vết cấu trúc payload của header yêu cầu (sửa đổi yêu cầu để truyền chính xác Cognito ID Token thay vì Access Token).&lt;/li>
+&lt;li>&lt;strong>Kiểm soát Lưu lượng &amp;amp; Tối ưu hóa Chi phí:&lt;/strong> Cấu hình các kế hoạch sử dụng (usage plans) của API Gateway để thực thi giới hạn tốc độ nghiêm ngặt ở mức 100 yêu cầu mỗi phút trên mỗi người dùng, bảo vệ các hàm backend khỏi các hành vi lạm dụng hoặc quá tải lưu lượng. Giảm thiểu chi phí gọi mô hình Amazon Bedrock bằng cách kích hoạt tầng bộ nhớ đệm cache 1 giờ trên API Gateway nhằm chặn các yêu cầu tóm tắt văn bản trùng lặp giống hệt nhau.&lt;/li>
+&lt;/ul></description></item></channel></rss>
