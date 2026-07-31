@@ -30,18 +30,17 @@ aws s3 ls s3://$(terraform output -raw reports_bucket_name)/reports/
 ### CI/CD Pipeline (CodePipeline)
 
 ```
-GitHub push (main) → Source → Test (pytest, bandit, tfsec, terraform fmt, terraform plan)
-                             → Approve (human reviews the plan) → Apply (terraform apply)
+GitHub push (main) → Source → Test (pytest, bandit, tfsec, terraform fmt, terraform plan) → Approve (human reviews the plan) → Apply (terraform apply)
+                             
 ```
 
-The pipeline itself is Terraform (modules/pipeline). The tfplan.binary artifact passes straight from Test into Apply — nothing is re-planned after approval, so what's reviewed is exactly what's applied.
+This is the pipeline itself called Terraform (modules/pipeline). tfplan.binary goes from Test to Apply as-is; there are no re-plans after the approval so that which was reviewed will be applied.
 
 **One-time setup:**
-1. Bootstrap remote state — S3 bucket with versioning + DynamoDB lock table.
-2. The GitHub connection needs a one-time manual authorization: **CodePipeline → Settings → Connections → Update pending connection**.
+1. Bootstrap remote state - S3 bucket with versioning and DynamoDB lock table.
+2. There is a need for one-time manual authorization for the GitHub connection: **CodePipeline > Settings > Connections > Update pending connection**.
 
-**IAM:** CodePipeline's own role is scoped narrowly. CodeBuild's role currently uses AdministratorAccess — flagged as a known scope-down item, not hidden.
-
+**IAM:** Role of the CodePipeline is restricted by nature. The current role of the CodeBuild has AdministratorAccess attached — it is marked as known scope-down.
 ```bash
 cd terraform && terraform apply
 ```

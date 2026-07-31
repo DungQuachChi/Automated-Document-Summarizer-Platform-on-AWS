@@ -10,20 +10,20 @@ pre : " 5.5.1. "
 
 Set up Cognito to issue and validate JWTs, and API Gateway to enforce that token plus an API key and usage plan on every request — both declared in Terraform, with no post-deploy console configuration needed.
 
-#### Cognito (`modules/auth`)
+#### Cognito (modules/auth)
 
-- aws_cognito_user_pool: email as the sign-in identifier, strong password policy, advanced_security_mode = "ENFORCED" (Cognito's risk-based adaptive auth — compromised-credential and unusual-activity detection, zero extra app code). Self-registration is on by default.
-- aws_cognito_user_pool_client: public client. explicit_auth_flows declares both ALLOW_USER_PASSWORD_AUTH and ALLOW_REFRESH_TOKEN_AUTH from the start. The Hosted UI path and the direct load-test auth path work off the same client with no later toggle.
-- aws_cognito_user_pool_domain: Hosted UI domain prefix, set via variable.
+- In the case of aws_cognito_user_pool, signup identifies users via email with the implementation of a strong password policy and advanced_security_mode set to "ENFORCED" thereby introducing Cognito's risk-based adaptive authentication in the form of compromised-credential-activity detection with no incremental coding requirements for the app itself. Moreover, self-registration is applied by default.
+- As for aws_cognito_user_pool_client, it is a public client which allows explicit_auth_flows with ALLOW_USER_PASSWORD_AUTH and ALLOW_REFRESH_TOKEN_AUTH from the beginning. The hosted UI path (as well as the direct load-testing authentication path) uses the same client and does not require subsequent switching of the client itself.
+- For aws_cognito_user_pool_domain, the hosted UI domain prefix has to be configured using variables.
 
 #### API Gateway (modules/api)
 
-- aws_api_gateway_rest_api (REST, not HTTP — needed for usage plans/API keys) + aws_api_gateway_authorizer (COGNITO_USER_POOLS, wired to the user pool ARN above).
-- /summarize (POST) and /history (GET), both AWS_PROXY to the same Lambda (Section 5.4.1). Both methods declare authorization = "COGNITO_USER_POOLS" and api_key_required = true directly in code.
-- CORS is an explicit OPTIONS method + MOCK integration, not a checkbox — Access-Control-Allow-Origin locked to the CloudFront domain (Section 5.5.2), not *.
-- aws_api_gateway_deployment with a triggers hash over every resource/method/integration/authorizer ID — Terraform redeploys automatically on any route change.
-- Account-level CloudWatch logging role and stage access logging are both provisioned here.
-- aws_api_gateway_usage_plan — rate_limit = 2/s, burst_limit = 20, quota = 5000/month, with an aws_api_gateway_api_key linked to it.
+- AWS API Gateway Rest API (REST, not HTTP) is required to make API keys and usage plans work. AWS API Gateway Authorizer (COGNITO_USER_POOLS) gets wired to the same user pool ARN above.
+- Endpoints /summarize (POST) and /history (GET) are AWS_PROXY to the same Lambda (Section 5.4.1). The authorization in both methods is set to "COGNITO_USER_POOLS" and the api_key_required parameter in the methods is set to true in the code.
+- Implementing CORS requires an explicit OPTIONS method plus a MOULK integration. The correct header Access-Control-Allow-Origin must be provided, which is locked to the CloudFront domain. 
+- Using the aws_api_gateway_deployment resource, we create a trigger for each resource/method/integration/authorizer IDs. 
+- Both account-level CloudWatch logging role and stage logging role must be created here.
+- aws_api_gateway_usage_plan creates an environment with a rate limit, available burst, and monthly quota.
 
 #### Applying
 
@@ -37,9 +37,9 @@ terraform output -raw api_key_value
 
 #### How JWT Auth Works
 
-Browser → Hosted UI login → Cognito verifies (risk-evaluated) → redirect with auth code → app exchanges code for JWT at /oauth2/token → JWT sent as Authorization header on every API call → API Gateway's Cognito authorizer validates before invoking Lambda. The JWT's sub claim becomes user_id in DynamoDB, scoping each user to their own history.
+Browser → Hosted UI authentication → Cognito checks (evaluates risk) → sends back authorization code → the app receives code and exchanges it for JWT via /oauth2/token → for every API call, JWT is sent in HTTP Authorization header → API Gateway's Cognito authorizer verifies the JWT before calling the Lambda function. The JWT sub claim translates into user_id in DynamoDB; therefore, each user has their own history.
 
-For scripted/load-test access, InitiateAuth/USER_PASSWORD_AUTH is enabled on the same client via explicit_auth_flows — no separate setup needed.
+When scripted/load-test type of access is needed, InitiateAuth/USER_PASSWORD_AUTH is enabled in the same client because of explicit_auth_flows – no stand-alone setup is required for this.
 
 #### Common Errors and Fixes
 

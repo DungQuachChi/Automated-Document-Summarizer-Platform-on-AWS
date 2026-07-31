@@ -12,12 +12,12 @@ This workshop is a DevOps and Cloud Engineering project that uses AI document su
 
 In this workshop build as a serverless document summarization platform. The platform accepts long-form text documents through a secured REST API and returns AI-generated summaries powered by Amazon Bedrock.
 
-There are four core components that work together to process a request end to end: Amazon Cognito, Amazon API Gateway, AWS Lambda, and Amazon Bedrock. Each component has a distinct role in the request pipeline, from authentication through to AI inference.
+There are four main building blocks that operate collectively throughout the entire request pipeline: Amazon Cognito, Amazon API Gateway, AWS Lambda, and Amazon Bedrock. Each block performs its own responsibility within the request flow, from authentication to inference.
 
-+ **Amazon Cognito** — Manages user sign-up, login, and JWT token issuance through a Hosted UI, so your API never has to handle passwords directly.
-+ **Amazon API Gateway** — Sits in front of your compute layer, validating every JWT token and enforcing a usage plan with an API key before any request reaches your code.
-+ **AWS Lambda** — Processes verified requests, calls Amazon Bedrock for AI summarization, and reads/writes to DynamoDB. Runs only when invoked, and scales to zero when idle.
-+ **Amazon Bedrock** — Generates the actual text summary using the Amazon Nova Lite foundation model, called via a cross-region inference profile.
++ **Amazon Cognito**: Takes care of the user’s sign-up, log-in, and generation of the JWT token via Hosted UI, thus not involving your API in working with any passwords.
++ **Amazon API Gateway**: Comes in front of your compute block and validates each JWT token, as well as implements the usage plan via an API key.
++ **AWS Lambda**: Executes the validated requests, invokes Amazon Bedrock to get the AI-based summary, reads/writes into DynamoDB. Invoked on-demand and scaled down to zero capacity in between.
++ **Amazon Bedrock**: Provides the text summary based on the Amazon Nova Lite foundation model, invoked via the cross-region inference profile.
 
 You will also build the infrastructure that core pipeline was recently use for product. Terraform for repeatable infrastructure, a CodePipeline CI/CD pipeline with automated tests and a manual approval gate, CloudWatch monitoring with a real firing alarm, and a CIS-aligned security baseline.
 
