@@ -14,7 +14,88 @@ Build the storage layer and the compute layer  that everything else in this work
 
 terraform/modules/data/main.tf:
 
-![overview](/images/5-Workshop/5.4-S3-onprem/The_DynamoDB_Table.jpeg)
+```
+data "aws_caller_identity" "current" {}
+
+#tfsec:ignore:aws-dynamodb-table-customer-key
+resource "aws_dynamodb_table" "summarizer" {
+  name         = "${var.project_name}-${var.table_name}"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "timestamp"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "timestamp"
+    type = "S"
+  }
+
+  # summary_date is written as YYYY-MM-DD by the summarizer Lambda.
+  # The weekly report Lambda uses this GSI to fetch all records in a
+  # date range across all users (one Query per day, up to 7 for a week).
+  attribute {
+    name = "summary_date"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  global_secondary_index {
+    name            = "summary-date-index"
+    hash_key        = "summary_date"
+    range_key       = "timestamp"
+    projection_type = "ALL"
+  }
+}
+
+#tfsec:ignore:aws-s3-enable-bucket-logging
+#tfsec:ignore:aws-s3-enable-versioning
+resource "aws_s3_bucket" "reports" {
+  bucket = "${var.project_name}-reports-${data.aws_caller_identity.current.account_id}"
+}
+
+#tfsec:ignore:aws-s3-encryption-customer-key
+resource "aws_s3_bucket_server_side_encryption_configuration" "reports" {
+  bucket = aws_s3_bucket.reports.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "reports" {
+  bucket                  = aws_s3_bucket.reports.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "reports" {
+  bucket = aws_s3_bucket.reports.id
+  rule {
+    id     = "archive-to-glacier"
+    status = "Enabled"
+    filter {}
+    transition {
+      days          = 30
+      storage_class = "GLACIER"
+    }
+  }
+}
+
+```
 
 - PAY_PER_REQUEST billing: no idle cost, no capacity planning.
 - Encryption at rest, point-in-time recovery .
@@ -22,17 +103,15 @@ terraform/modules/data/main.tf:
 
 #### Lambda IAM Role
 
-Terraform/modules/compute/main.tf builds a role scoped to discrete, resource level statements, no wildcard actions or resources beyond what cross-region Bedrock inference requires:
+The log group is generated manually (aws_cloudwatch_log_group, retaining logs for 7 days) before the actual function is able to begin executing the Lambda-based function, instead of utilizing the log group which is created by Lambda automatically without an expiration period. The timeout is set for 30 seconds, as Bedrock calls and retries also require the extra time on top of the default value of 3 seconds.
 
-- DynamoDB: PutItem + Query only — no Scan, no DeleteItem — matching exactly what the two code paths (handle_summarize, handle_history) call.
-- Bedrock: two specific ARNs foundation model and inference profile, not a wildcard.
-- Cloudwatch:PutMetricData uses a * resource a CloudWatch API limitation , not a scoping choice.
+If no Cognrito claims are supplied in the request, the user_id is assigned a hard-coded value, which can be considered useful for local/manual testing and which must be deleted before launching the application in any production mode.
 
 #### Lambda Function
 
-The log group is created explicitly (aws_cloudwatch_log_group, 7-day retention) and depended on before the function, rather than relying on Lambda's auto-created group with no expiry. Timeout is 30 seconds — Bedrock calls plus retry backoff need headroom beyond the default 3s.
+The log group is built explicitly (aws_cloudwatch_log_group, seven days retention) and was needed before the function is called instead of relying on the automatically created log group without the expiration period. The timeout period is set to 30 seconds as Bedrock calls plus retry backoff need room greater than the default 3 seconds.
 
-**Known dev-only shortcut, stated plainly rather than hidden:** if no Cognito claims are present on the request, user_id falls back to a hardcoded test value. This exists for local/manual testing and should be removed before any real production deployment.
+If the requests do not include any Cognito claims, the user_id is set to a specific test value. This feature is used for local/manual testing and should be removed before deploying to actual production.
 
 #### Deploy and Test
 
