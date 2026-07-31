@@ -1,82 +1,62 @@
 ---
-title : "Kiểm tra Gateway Endpoint"
-date : 2024-01-01 
+title : "Frontend Hosting — S3 & CloudFront"
+date : 2026-07-14
 weight : 2
 chapter : false
-pre : " <b> 5.3.2 </b> "
+pre : " 5.5.2. "
 ---
 
-#### Tạo S3 bucket
+#### Mục tiêu
 
-1. Đi đến S3 management console
-2. Trong Bucket console, chọn **Create bucket**
+Lưu trữ frontend tĩnh trên S3, phân phối thông qua CloudFront, và tự động truyền tên miền (domain) kết quả sang Cognito và API Gateway bằng cách kết nối thông qua Terraform output.
 
-![Create bucket](/images/5-Workshop/5.3-S3-vpc/create-bucket.png)
+#### Tài nguyên Terraform
 
-3. Trong Create bucket console
-+ Đặt tên bucket: chọn 1 tên mà không bị trùng trong phạm vi toàn cầu (gợi ý: lab\<số-lab\>\<tên-bạn\>)
+modules/frontend:
 
-![Bucket name](/images/5-Workshop/5.3-S3-vpc/bucket-name.png)
+- aws_s3_bucket ở chế độ private (chặn toàn bộ quyền truy cập công khai) + aws_cloudfront_distribution sử dụng Origin Access Control — CloudFront xác thực với S3 bằng SigV4, nhờ đó bucket luôn ở trạng thái riêng tư hoàn toàn. HTTP được chuyển hướng sang HTTPS, sử dụng PriceClass_100.
+- Bucket policy cấp quyền cloudfront.amazonaws.com s3:GetObject, được giới hạn phạm vi thông qua AWS:SourceArn chỉ dành cho đúng distribution này.
+- Versioning, CloudFront access logging, và WAF Web ACL đều cố tình được bỏ qua — chi phí không tương xứng với quy mô của dự án này.
 
+#### Kết nối giữa các Module
 
-+ Giữ nguyên giá trị của các fields khác (default)
-+ Kéo chuột xuống và chọn **Create bucket**
+module.frontend.cloudfront_domain_name được truyền trực tiếp sang cả hai module còn lại:
 
-![Create](/images/5-Workshop/5.3-S3-vpc/create-button.png)    
+```hcl
+module "auth" { cloudfront_domain_name = module.frontend.cloudfront_domain_name }
+module "api"  { cloudfront_domain_name = module.frontend.cloudfront_domain_name }
+```
 
-+ Tạo thành công S3 bucket
+Cả callback_urls/logout_urls của Cognito lẫn CORS origin của API Gateway đều được lấy từ chính một output này. Chỉ cần một lần terraform apply là đã khởi tạo bucket/distribution, đọc lấy domain kết quả, và truyền nó vào cả hai module — không cần thêm bước riêng nào để cập nhật thủ công Cognito hay CORS sau đó.
 
-![Success](/images/5-Workshop/5.3-S3-vpc/bucket-success.png)
+#### Áp dụng và triển khai file
 
-#### Kết nối với EC2 bằng session manager
+```bash
+terraform apply
+terraform output cloudfront_domain_name
+```
 
-+ Trong workshop này, bạn sẽ dùng AWS Session Manager để kết nối đến các EC2 instances. Session Manager là 1 tính năng trong dịch vụ Systems Manager được quản lý hoàn toàn bởi AWS. System manager cho phép bạn quản lý Amazon EC2 instances và các máy ảo on-premises (VMs)thông qua 1 browser-based shell. Session Manager cung cấp khả năng quản lý phiên bản an toàn và có thể kiểm tra mà không cần mở cổng vào, duy trì máy chủ bastion host hoặc quản lý khóa SSH.
+```bash
+# trước tiên hãy đặt API_BASE_URL trong frontend/script.js thành giá trị output api_invoke_url
+aws s3 cp frontend/index.html s3://$(terraform output -raw frontend_bucket_name)/
+aws s3 cp frontend/script.js  s3://$(terraform output -raw frontend_bucket_name)/
+aws cloudfront create-invalidation \
+  --distribution-id $(terraform output -raw cloudfront_distribution_id) \
+  --paths "/*"
+```
 
-+ First Cloud AI Journey [Lab](https://000058.awsstudygroup.com/1-introduce/) để hiểu sâu hơn về Session manager.
+**Cách kiểm tra:** mở domain CloudFront — frontend tải lên bình thường, việc đăng nhập chuyển hướng chính xác. Một request truy cập trực tiếp vào URL object của S3 sẽ trả về lỗi **AccessDenied**.
 
-1. Trong AWS Management Console, gõ Systems Manager trong ô tìm kiếm và nhấn Enter:
+#### Các lỗi thường gặp và cách khắc phục
 
-![system manager](/images/5-Workshop/5.3-S3-vpc/sm.png)
+| Lỗi | Nguyên nhân | Cách khắc phục |
+|---|---|---|
+| AccessDenied khi tải URL CloudFront | SourceArn trong bucket policy chưa khớp với ARN của distribution | Chạy terraform apply lại — policy được sinh ra dựa trên resource distribution nên sẽ tự động sửa lại đúng |
+| script.js cũ vẫn được phục vụ sau khi upload lại | CloudFront cache tại edge | Chạy lại bước invalidation sau mỗi lần cập nhật file frontend |
+| Cognito chuyển hướng đến trang trống/trang lỗi sau khi đăng nhập | Chưa chạy terraform apply kể từ khi module frontend được thêm vào | Chạy terraform apply — không cần chỉnh sửa Cognito thủ công |
 
-2. Từ **Systems Manager** menu, tìm **Node Management** ở thanh bên trái và chọn **Session Manager**:
+---
 
-![system manager](/images/5-Workshop/5.3-S3-vpc/sm1.png)
+### Tóm tắt phần này
 
-3. Click Start Session, và chọn EC2 instance tên **Test-Gateway-Endpoint**. 
-{{% notice info %}}
-Phiên bản EC2 này đã chạy trong "VPC cloud" và sẽ được dùng để kiểm tra khả năng kết nối với Amazon S3 thông qua điểm cuối Cổng mà bạn vừa tạo (s3-gwe). {{% /notice %}}
-
-![Start session](/images/5-Workshop/5.3-S3-vpc/start-session.png)
-
-Session Manager sẽ mở browser tab mới với shell prompt: sh-4.2 $
-
-![Success](/images/5-Workshop/5.3-S3-vpc/start-session-success.png)
-
-Bạn đã bắt đầu phiên kết nối đến EC2 trong VPC Cloud thành công. Trong bước tiếp theo, chúng ta sẽ tạo một  S3 bucket và một tệp trong đó.
-#### Create a file and upload to s3 bucket
-
-1. Đổi về ssm-user's thư mục bằng lệnh "cd ~" 
-
-![Change user's dir](/images/5-Workshop/5.3-S3-vpc/cli1.png)
-
-2. Tạo 1 file để kiểm tra bằng lệnh "fallocate -l 1G testfile.xyz", 1 file tên "testfile.xyz" có kích thước 1GB sẽ được tạo.
-
-![Create file](/images/5-Workshop/5.3-S3-vpc/cli-file.png)
-
-3. Tải file mình vừa tạo lên S3 với lệnh "aws s3 cp testfile.xyz s3://your-bucket-name". Thay your-bucket-name bằng tên S3 bạn đã tạo.
-
-![Uploaded](/images/5-Workshop/5.3-S3-vpc/uploaded.png)
-
-Bạn đã tải thành công tệp lên bộ chứa S3 của mình. Bây giờ bạn có thể kết thúc session.
-
-#### Kiểm tra object trong S3 bucket
-
-1. Đi đến S3 console.  
-2. Click tên s3 bucket của bạn
-3. Trong Bucket console, bạn sẽ thấy tệp bạn đã tải lên S3 bucket của mình
-
-![Check S3](/images/5-Workshop/5.3-S3-vpc/check-s3-bucket.png)
-
-#### Tóm tắt
-
-Chúc mừng bạn đã hoàn thành truy cập S3 từ VPC. Trong phần này, bạn đã tạo gateway endpoint cho Amazon S3 và sử dụng AWS CLI để tải file lên. Quá trình tải lên hoạt động vì gateway endpoint cho phép giao tiếp với S3 mà không cần Internet gateway gắn vào "VPC Cloud". Điều này thể hiện chức năng của gateway endpoint như một đường dẫn an toàn đến S3 mà không cần đi qua pub    lic Internet.
+Chúc mừng bạn đã hoàn thành tầng access layer. Trong phần này, bạn đã thiết lập Cognito để cấp phát và xác thực JWT, cấu hình API Gateway để bắt buộc mỗi request phải kèm theo token đó cùng với một API key và usage plan, và lưu trữ frontend tĩnh trên S3 phía sau CloudFront bằng cách sử dụng Origin Access Control để bucket luôn ở trạng thái riêng tư. Các thành phần này tự động kết nối với nhau vì tên miền CloudFront được truyền dưới dạng Terraform output vào cả callback URL của app client Cognito lẫn cấu hình CORS của API Gateway — chỉ một lệnh **terraform apply** duy nhất là giữ cho cả ba đồng bộ với nhau, không cần đối chiếu thủ công qua lại giữa các console. Điều này thể hiện chiến lược phòng thủ theo chiều sâu (defense in depth) ngay tại lớp biên: xác thực (authentication), phân quyền (authorization) và giới hạn tần suất (rate limiting) đều được thực thi trước khi một request có thể chạm tới code ứng dụng, và frontend chỉ có thể được truy cập thông qua CDN, không bao giờ truy cập trực tiếp.

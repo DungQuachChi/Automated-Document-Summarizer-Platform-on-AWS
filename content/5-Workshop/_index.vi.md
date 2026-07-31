@@ -1,33 +1,41 @@
 ---
 title: "Workshop"
-date: 2024-01-01
+date: 2026-07-14
 weight: 5
 chapter: false
 pre: " <b> 5. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+# Dự án: Infrastructure as Code cho Khối lượng Công việc Serverless AI Bảo mật trên AWS
 
+Bài thực hành này là một dự án DevOps và Cloud Engineering sử dụng ứng dụng tóm tắt tài liệu bằng AI làm ví dụ thực tế để hướng dẫn về kiến trúc serverless bảo mật, Infrastructure as Code, tự động hóa CI/CD và khả năng giám sát/quan sát (observability) trên AWS.
 
-# Đảm bảo truy cập Hybrid an toàn đến S3 bằng cách sử dụng VPC endpoint
+Trong bài thực hành này, bạn sẽ xây dựng một nền tảng tóm tắt tài liệu dạng serverless. Nền tảng tiếp nhận các văn bản dài thông qua một REST API được bảo mật và trả về bản tóm tắt do AI tạo ra nhờ sức mạnh của Amazon Bedrock.
 
-#### Tổng quan
+Có bốn thành phần cốt lõi phối hợp hoạt động trong toàn bộ quy trình xử lý yêu cầu (request pipeline): Amazon Cognito, Amazon API Gateway, AWS Lambda và Amazon Bedrock. Mỗi thành phần đảm nhận một nhiệm vụ riêng trong luồng xử lý yêu cầu, từ xác thực người dùng cho đến suy luận AI (inference).
 
-**AWS PrivateLink** cung cấp kết nối riêng tư đến các dịch vụ aws từ VPCs hoặc trung tâm dữ liệu (on-premise) mà không làm lộ lưu lượng truy cập ra ngoài public internet.
++ **Amazon Cognito**: Quản lý việc đăng ký, đăng nhập của người dùng và tạo JWT token thông qua Hosted UI, giúp API của bạn không cần trực tiếp xử lý hay lưu trữ bất kỳ mật khẩu nào.
++ **Amazon API Gateway**: Đứng trước khối xử lý tính toán (compute) để xác thực từng JWT token, đồng thời áp dụng hạn mức sử dụng (usage plan) thông qua API key.
++ **AWS Lambda**: Thực thi các yêu cầu hợp lệ, gọi Amazon Bedrock để lấy bản tóm tắt từ AI, đồng thời đọc/ghi dữ liệu vào DynamoDB. Được kích hoạt theo nhu cầu (on-demand) và tự động thu gom/giảm quy mô về 0 khi nhàn rỗi.
++ **Amazon Bedrock**: Cung cấp bản tóm tắt văn bản dựa trên mô hình nền tảng Amazon Nova Lite, được gọi thông qua hồ sơ suy luận đa vùng (cross-region inference profile).
 
-Trong bài lab này, chúng ta sẽ học cách tạo, cấu hình, và kiểm tra VPC endpoints để cho phép workload của bạn tiếp cận các dịch vụ AWS mà không cần đi qua Internet công cộng.
+Bạn cũng sẽ xây dựng hạ tầng phục vụ quy trình cốt lõi này cho sản phẩm: Terraform giúp tái tạo hạ tầng nhanh chóng, quy trình CI/CD với CodePipeline tích hợp kiểm thử tự động và bước phê duyệt thủ công, hệ thống giám sát CloudWatch đi kèm cảnh báo thực tế, cùng tiêu chuẩn an toàn bảo mật tuân thủ định hướng CIS.
 
-Chúng ta sẽ tạo hai loại endpoints để truy cập đến Amazon S3: gateway vpc endpoint và interface vpc endpoint. Hai loại vpc endpoints này mang đến nhiều lợi ích tùy thuộc vào việc bạn truy cập đến S3 từ môi trường cloud hay từ trung tâm dữ liệu (on-premise).
-+ **Gateway** - Tạo gateway endpoint để gửi lưu lượng đến Amazon S3 hoặc DynamoDB using private IP addresses. Bạn điều hướng lưu lượng từ VPC của bạn đến gateway endpoint bằng các bảng định tuyến (route tables)
-+ **Interface** - Tạo interface endpoint để gửi lưu lượng đến các dịch vụ điểm cuối (endpoints) sử dụng Network Load Balancer để phân phối lưu lượng. Lưu lượng dành cho dịch vụ điểm cuối được resolved bằng DNS.
+---
 
 #### Nội dung
 
-1. [Tổng quan về workshop](5.1-Workshop-overview/)
-2. [Chuẩn bị](5.2-Prerequiste/)
-3. [Truy cập đến S3 từ VPC](5.3-S3-vpc/)
-4. [Truy cập đến S3 từ TTDL On-premises](5.4-S3-onprem/)
-5. [VPC Endpoint Policies (làm thêm)](5.5-Policy/)
-6. [Dọn dẹp tài nguyên](5.6-Cleanup/)
+1. [Tổng quan](1.1-Overview/)
+2. [Điều kiện tiên quyết](2-Prerequisites/)
+3. [Thiết kế kiến trúc](3-Architecture/)
+4. [Backend & AI](5.4-Backend&AI/)
+   1. [DynamoDB & Lambda](5.4.1-DynamoDB&Lambda/)
+   2. [Tích hợp AI](5.4.2-AI_Integration/)
+5. [Tầng truy cập](5.5-Access Layer/)
+   1. [Tầng API — API Gateway](5.5.1-APIGateway/)
+   2. [S3 & CloudFront](5.5.2-S3&CloudFront/)
+6. [Tự động hóa & Vận hành](5.6-Automation&Operations/)
+   1. [CI/CD & Tự động hóa](5.6.1-CICD&Automation/)
+   2. [Giám sát & Bảo mật](5.6.2-Monitoring&Security/)
+7. [Kiểm thử](5.7-Testing/)
+8. [Dọn dẹp tài nguyên](5.8-Cleanup/)

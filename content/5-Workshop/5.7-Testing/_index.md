@@ -113,16 +113,14 @@ The tests/ directory contains pytest tests that exercise the Lambda handler func
    ```
 3. Typical coverage: input validation boundaries, the summary_date field being correctly derived and written on every PutItem, handle_history returning results sorted newest-first, and the DailyQuotaExceededError path returning a 429 rather than propagating as a 500.
 
-moto intercepts boto3 calls and simulates DynamoDB in-memory, so these tests run in CI (Section 5.6.1) without needing real AWS credentials or touching the actual SummarizerTable.
-
-**How to verify:** pytest tests/ -v exits with code 0 and a summary line like X passed in Y s.
+moto intercepts boto3 calls and simulates DynamoDB in-memory, so these tests run in CI without needing real AWS credentials or touching the actual SummarizerTable.
 
 #### Load Testing
 
 locustfile.py can run in two distinct modes, and it's important to know which one produced a given result before drawing conclusions from it:
 
 - **MOCK_MODE=true** (the default) — auth is skipped in favor of a fixed placeholder Bearer token, and requests go wherever --host points. This exercises the request/response contract and concurrency handling without depending on Cognito or Bedrock being available.
-- **MOCK_MODE=false** — the script calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 (an unauthenticated/unsigned API call, not the Hosted UI's /oauth2/token endpoint, which only accepts authorization_code/refresh_token grants) to get a real JWT, and every request carries the real x-api-key header. This is the only mode that actually exercises Bedrock.
+- **MOCK_MODE=false** — the script calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 to get a real JWT, and every request carries the real x-api-key header. This is the only mode that actually exercises Bedrock.
 
 **Mock-mode results — 50 concurrent users:**
 
@@ -178,16 +176,18 @@ Set `--host` to `http://localhost:8000` for the mock server, or the real API Gat
    ```
 4. Open the Locust web UI (default `http://localhost:8089`), set number of users and ramp-up rate, start the test.
 
-**What "good" looks like:** GET /history should show 0 failures with a low median latency (sub-500ms is reasonable for a DynamoDB query behind API Gateway + Lambda). POST /summarize latency depends entirely on Bedrock — a healthy result is consistent 2xx responses in the low single-digit seconds.
 
-**A real finding from this project's load testing:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds — API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause — 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue.
+**Project load testing result:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds — API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause — 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue.
+
+![overview](/images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
+
 
 #### Common Errors and Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
-| pytest fails with NoRegionError or real AWS calls being attempted | moto mock decorator missing on a test, or DynamoDB resource created outside the mocked context | Confirm the test function is wrapped with the moto mock (e.g. @mock_aws) before any boto3.resource('dynamodb') call |
-| API Gateway execution logs stay empty even after enabling them per-stage | Missing account-level CloudWatch Logs role for API Gateway | Confirm the role from Section 5.5.1 is still attached at **API Gateway → Settings → CloudWatch log role ARN** |
-| Locust InitiateAuth fails with NotAuthorizedException | Test user password wasn't set as permanent, or USER_PASSWORD_AUTH isn't enabled on the app client | Confirm admin-set-user-password --permanent was used, and that Section 5.5.1's auth flow configuration was applied |
-| POST /summarize consistently times out around 29s under load | Bedrock retry logic burning the full Lambda timeout on quota errors | Confirm the daily-quota fast-fail path from Section 5.4.2 is deployed, not an older version without it |
+| pytest fails with NoRegionError or real AWS calls being attempted | moto mock decorator missing on a test, or DynamoDB resource created outside the mocked context | Confirm the test function is wrapped with the moto mock before any boto3.resource('dynamodb') call |
+| API Gateway execution logs stay empty even after enabling them per-stage | Missing account-level CloudWatch Logs role for API Gateway | Confirm the role is still attached at **API Gateway → Settings → CloudWatch log role ARN** |
+| Locust InitiateAuth fails with NotAuthorizedException | Test user password wasn't set as permanent, or USER_PASSWORD_AUTH isn't enabled on the app client | Confirm admin-set-user-password --permanent was used, and auth flow configuration was applied |
+| POST /summarize consistently times out around 29s under load | Bedrock retry logic burning the full Lambda timeout on quota errors | Confirm the daily-quota fast-fail path is deployed, not an older version without it |
 | A locust run reports mode: MOCK in its startup log | MOCK_MODE env var  is true | Expected for a mock-path baseline; if a real-API result was intended, set MOCK_MODE=false and confirm .env.test is loaded before re-running |

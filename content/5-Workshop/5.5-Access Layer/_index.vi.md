@@ -1,18 +1,14 @@
 ---
-title : "Truy cập S3 từ VPC"
-date : 2024-01-01 
-weight : 3
+title : "Access Layer"
+date : 2026-07-14
+weight : 5
 chapter : false
-pre : " <b> 5.3. </b> "
+pre : " <b> 5.5. </b> "
 ---
 
-#### Sử dụng Gateway endpoint
+#### Tổng quan
 
-Trong phần này, bạn sẽ tạo một Gateway endpoint để truy cập Amazon S3 từ một EC2 instance. Gateway endpoint sẽ cho phép tải một object lên S3 bucket mà không cần sử dụng Internet Công cộng. Để tạo endpoint, bạn phải chỉ định VPC mà bạn muốn tạo endpoint và dịch vụ (trong trường hợp này là S3) mà bạn muốn thiết lập kết nối.
+Toàn bộ những gì một request phải đi qua để đến được backend: xác thực danh tính, kiểm tra tính hợp lệ của request, và phần frontend khởi đầu cho luồng xử lý.
 
-![overview](/images/5-Workshop/5.3-S3-vpc/diagram2.png)
-
-#### Nội dung
-
-- [Tạo gateway endpoint](3.1-create-gwe/)
-- [Test gateway endpoint](3.2-test-gwe/)
+1. [Xác thực & API — Cognito & API Gateway](5.5.1-APIGateway/)
+2. [Lưu trữ Frontend — S3 & CloudFront](5.5.2-S3&CloudFront/)

@@ -1,242 +1,83 @@
 ---
-title : "Các bước chuẩn bị"
-date : 2024-01-01 
-weight : 2
+title : "Thiết kế cấu trúc"
+date : 2026-07-14
+weight : 3
 chapter : false
-pre : " <b> 5.2. </b> "
+pre : " <b> 5.3. </b> "
 ---
 
-#### IAM permissions
-Gắn IAM permission policy sau vào tài khoản aws user của bạn để triển khai và dọn dẹp tài nguyên trong workshop này.
-```
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "cloudformation:*",
-                "cloudwatch:*",
-                "ec2:AcceptTransitGatewayPeeringAttachment",
-                "ec2:AcceptTransitGatewayVpcAttachment",
-                "ec2:AllocateAddress",
-                "ec2:AssociateAddress",
-                "ec2:AssociateIamInstanceProfile",
-                "ec2:AssociateRouteTable",
-                "ec2:AssociateSubnetCidrBlock",
-                "ec2:AssociateTransitGatewayRouteTable",
-                "ec2:AssociateVpcCidrBlock",
-                "ec2:AttachInternetGateway",
-                "ec2:AttachNetworkInterface",
-                "ec2:AttachVolume",
-                "ec2:AttachVpnGateway",
-                "ec2:AuthorizeSecurityGroupEgress",
-                "ec2:AuthorizeSecurityGroupIngress",
-                "ec2:CreateClientVpnEndpoint",
-                "ec2:CreateClientVpnRoute",
-                "ec2:CreateCustomerGateway",
-                "ec2:CreateDhcpOptions",
-                "ec2:CreateFlowLogs",
-                "ec2:CreateInternetGateway",
-                "ec2:CreateLaunchTemplate",
-                "ec2:CreateNetworkAcl",
-                "ec2:CreateNetworkInterface",
-                "ec2:CreateNetworkInterfacePermission",
-                "ec2:CreateRoute",
-                "ec2:CreateRouteTable",
-                "ec2:CreateSecurityGroup",
-                "ec2:CreateSubnet",
-                "ec2:CreateSubnetCidrReservation",
-                "ec2:CreateTags",
-                "ec2:CreateTransitGateway",
-                "ec2:CreateTransitGatewayPeeringAttachment",
-                "ec2:CreateTransitGatewayPrefixListReference",
-                "ec2:CreateTransitGatewayRoute",
-                "ec2:CreateTransitGatewayRouteTable",
-                "ec2:CreateTransitGatewayVpcAttachment",
-                "ec2:CreateVpc",
-                "ec2:CreateVpcEndpoint",
-                "ec2:CreateVpcEndpointConnectionNotification",
-                "ec2:CreateVpcEndpointServiceConfiguration",
-                "ec2:CreateVpnConnection",
-                "ec2:CreateVpnConnectionRoute",
-                "ec2:CreateVpnGateway",
-                "ec2:DeleteCustomerGateway",
-                "ec2:DeleteFlowLogs",
-                "ec2:DeleteInternetGateway",
-                "ec2:DeleteNetworkInterface",
-                "ec2:DeleteNetworkInterfacePermission",
-                "ec2:DeleteRoute",
-                "ec2:DeleteRouteTable",
-                "ec2:DeleteSecurityGroup",
-                "ec2:DeleteSubnet",
-                "ec2:DeleteSubnetCidrReservation",
-                "ec2:DeleteTags",
-                "ec2:DeleteTransitGateway",
-                "ec2:DeleteTransitGatewayPeeringAttachment",
-                "ec2:DeleteTransitGatewayPrefixListReference",
-                "ec2:DeleteTransitGatewayRoute",
-                "ec2:DeleteTransitGatewayRouteTable",
-                "ec2:DeleteTransitGatewayVpcAttachment",
-                "ec2:DeleteVpc",
-                "ec2:DeleteVpcEndpoints",
-                "ec2:DeleteVpcEndpointServiceConfigurations",
-                "ec2:DeleteVpnConnection",
-                "ec2:DeleteVpnConnectionRoute",
-                "ec2:Describe*",
-                "ec2:DetachInternetGateway",
-                "ec2:DisassociateAddress",
-                "ec2:DisassociateRouteTable",
-                "ec2:GetLaunchTemplateData",
-                "ec2:GetTransitGatewayAttachmentPropagations",
-                "ec2:ModifyInstanceAttribute",
-                "ec2:ModifySecurityGroupRules",
-                "ec2:ModifyTransitGatewayVpcAttachment",
-                "ec2:ModifyVpcAttribute",
-                "ec2:ModifyVpcEndpoint",
-                "ec2:ReleaseAddress",
-                "ec2:ReplaceRoute",
-                "ec2:RevokeSecurityGroupEgress",
-                "ec2:RevokeSecurityGroupIngress",
-                "ec2:RunInstances",
-                "ec2:StartInstances",
-                "ec2:StopInstances",
-                "ec2:UpdateSecurityGroupRuleDescriptionsEgress",
-                "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
-                "iam:AddRoleToInstanceProfile",
-                "iam:AttachRolePolicy",
-                "iam:CreateInstanceProfile",
-                "iam:CreatePolicy",
-                "iam:CreateRole",
-                "iam:DeleteInstanceProfile",
-                "iam:DeletePolicy",
-                "iam:DeleteRole",
-                "iam:DeleteRolePolicy",
-                "iam:DetachRolePolicy",
-                "iam:GetInstanceProfile",
-                "iam:GetPolicy",
-                "iam:GetRole",
-                "iam:GetRolePolicy",
-                "iam:ListPolicyVersions",
-                "iam:ListRoles",
-                "iam:PassRole",
-                "iam:PutRolePolicy",
-                "iam:RemoveRoleFromInstanceProfile",
-                "lambda:CreateFunction",
-                "lambda:DeleteFunction",
-                "lambda:DeleteLayerVersion",
-                "lambda:GetFunction",
-                "lambda:GetLayerVersion",
-                "lambda:InvokeFunction",
-                "lambda:PublishLayerVersion",
-                "logs:CreateLogGroup",
-                "logs:DeleteLogGroup",
-                "logs:DescribeLogGroups",
-                "logs:PutRetentionPolicy",
-                "route53:ChangeTagsForResource",
-                "route53:CreateHealthCheck",
-                "route53:CreateHostedZone",
-                "route53:CreateTrafficPolicy",
-                "route53:DeleteHostedZone",
-                "route53:DisassociateVPCFromHostedZone",
-                "route53:GetHostedZone",
-                "route53:ListHostedZones",
-                "route53domains:ListDomains",
-                "route53domains:ListOperations",
-                "route53domains:ListTagsForDomain",
-                "route53resolver:AssociateResolverEndpointIpAddress",
-                "route53resolver:AssociateResolverRule",
-                "route53resolver:CreateResolverEndpoint",
-                "route53resolver:CreateResolverRule",
-                "route53resolver:DeleteResolverEndpoint",
-                "route53resolver:DeleteResolverRule",
-                "route53resolver:DisassociateResolverEndpointIpAddress",
-                "route53resolver:DisassociateResolverRule",
-                "route53resolver:GetResolverEndpoint",
-                "route53resolver:GetResolverRule",
-                "route53resolver:ListResolverEndpointIpAddresses",
-                "route53resolver:ListResolverEndpoints",
-                "route53resolver:ListResolverRuleAssociations",
-                "route53resolver:ListResolverRules",
-                "route53resolver:ListTagsForResource",
-                "route53resolver:UpdateResolverEndpoint",
-                "route53resolver:UpdateResolverRule",
-                "s3:AbortMultipartUpload",
-                "s3:CreateBucket",
-                "s3:DeleteBucket",
-                "s3:DeleteObject",
-                "s3:GetAccountPublicAccessBlock",
-                "s3:GetBucketAcl",
-                "s3:GetBucketOwnershipControls",
-                "s3:GetBucketPolicy",
-                "s3:GetBucketPolicyStatus",
-                "s3:GetBucketPublicAccessBlock",
-                "s3:GetObject",
-                "s3:GetObjectVersion",
-                "s3:GetBucketVersioning",
-                "s3:ListAccessPoints",
-                "s3:ListAccessPointsForObjectLambda",
-                "s3:ListAllMyBuckets",
-                "s3:ListBucket",
-                "s3:ListBucketMultipartUploads",
-                "s3:ListBucketVersions",
-                "s3:ListJobs",
-                "s3:ListMultipartUploadParts",
-                "s3:ListMultiRegionAccessPoints",
-                "s3:ListStorageLensConfigurations",
-                "s3:PutAccountPublicAccessBlock",
-                "s3:PutBucketAcl",
-                "s3:PutBucketPolicy",
-                "s3:PutBucketPublicAccessBlock",
-                "s3:PutObject",
-                "secretsmanager:CreateSecret",
-                "secretsmanager:DeleteSecret",
-                "secretsmanager:DescribeSecret",
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:ListSecrets",
-                "secretsmanager:ListSecretVersionIds",
-                "secretsmanager:PutResourcePolicy",
-                "secretsmanager:TagResource",
-                "secretsmanager:UpdateSecret",
-                "sns:ListTopics",
-                "ssm:DescribeInstanceProperties",
-                "ssm:DescribeSessions",
-                "ssm:GetConnectionStatus",
-                "ssm:GetParameters",
-                "ssm:ListAssociations",
-                "ssm:ResumeSession",
-                "ssm:StartSession",
-                "ssm:TerminateSession"
-            ],
-            "Resource": "*"
-        }
+#### Luồng dữ liệu tổng quan (End-to-End Dataflow)
+
+![overview](/images/5-Workshop/5.3-Architechture-Design/project_arch.jpeg)
+
+#### Luồng CI/CD Pipeline
+
+![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.png)
+
+#### Luồng báo cáo hàng tuần (Weekly Report Path)
+
+![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.png)
+
+#### Bảng dịch vụ
+
+| Dịch vụ | Vai trò | Lý do lựa chọn |
+|---|---|---|
+| Cognito | Xác thực người dùng, cấp phát JWT | Dịch vụ định danh được quản lý (không cần viết code xác thực riêng, có sẵn Hosted UI) |
+| API Gateway | Xác thực request, định tuyến, giới hạn tần suất (rate limiting) | Cổng vào được quản lý (xác thực JWT và usage plan mà không cần middleware tự viết) |
+| Lambda | Thực thi logic nghiệp vụ | Trả phí theo lượt gọi, tự động scale về 0, không cần quản lý server |
+| Bedrock | Tóm tắt văn bản bằng AI | Truy cập foundation model được quản lý sẵn, không cần tự host model/quản lý GPU |
+| DynamoDB | Lưu trữ dữ liệu | NoSQL serverless, API dựa trên HTTP phù hợp với mô hình gọi hàm không trạng thái (stateless) của Lambda, tính phí theo nhu cầu sử dụng |
+| S3 | Lưu trữ frontend tĩnh, lưu báo cáo | Lưu trữ object bền vững, chi phí gần như bằng 0 cho các tài nguyên tĩnh nhỏ |
+| CloudFront | CDN cho frontend | Chấm dứt HTTPS, cache tại edge, bắt buộc phải có với site S3 công khai |
+| EventBridge | Kích hoạt theo lịch cho báo cáo hàng tuần | Cron được quản lý sẵn, không cần server để duy trì lịch chạy |
+| CloudWatch + SNS | Số liệu, dashboard, cảnh báo | Tích hợp sẵn với tất cả các dịch vụ AWS khác được dùng trong dự án |
+| CloudTrail + Config | Ghi log kiểm toán, quy tắc tuân thủ | Bắt buộc để đáp ứng conformance pack theo CIS Foundations Benchmark |
+| CodePipeline / CodeBuild | Tự động hóa CI/CD | Tích hợp gốc của AWS với CodeStar/GitHub, không cần dịch vụ CI riêng biệt |
+| Terraform | Hạ tầng dưới dạng mã (Infrastructure as Code) | Khai báo (declarative), quy trình plan-trước-khi-apply, kỹ năng có thể dùng trên nhiều nền tảng cloud |
+
+#### Nền tảng bảo mật và IAM
+
+**Nguyên tắc đặc quyền tối thiểu (least privilege) — vai trò thực thi của Lambda.** IAM role của hàm Lambda chỉ cấp đúng những hành động mà nó cần:
+
+```hcl
+resource "aws_iam_role_policy" "lambda_permissions" {
+  policy = jsonencode({
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:PutItem", "dynamodb:Query"]
+        Resource = aws_dynamodb_table.summarizer.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["bedrock:InvokeModel"]
+        Resource = "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0"
+      }
     ]
+  })
 }
-
 ```
 
-#### Khởi tạo tài nguyên bằng CloudFormation
+Không có wildcard `dynamodb:`, không có wildcard `bedrock:`, không có quyền truy cập vào bất kỳ bảng hay model nào khác. Nếu thông tin xác thực của role này bị rò rỉ, phạm vi ảnh hưởng chỉ giới hạn ở việc ghi/đọc một bảng DynamoDB và gọi một model Bedrock duy nhất.
 
-Trong lab này, chúng ta sẽ dùng N.Virginia region (us-east-1).
+**IAM role so với user và hardcode key.** Lambda sử dụng một IAM **role** — được hàm Lambda sử dụng trong quá trình thực thi thông qua thông tin xác thực tạm thời được cấp tại thời điểm hàm được gọi; không có IAM user nào với access key tồn tại lâu dài được dùng, ngoại trừ trường hợp truy cập CLI của con người (personal profile). Trong suốt dự án, không có giá trị AWS credentials nào bị hardcode vào code ứng dụng hay commit lên git.
 
-Để chuẩn bị cho môi trường làm workshop, chúng ta deploy CloudFormation template sau (click link): [PrivateLinkWorkshop ](https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-1.amazonaws.com/reinvent-endpoints-builders-session/Nested.yaml&stackName=PLCloudSetup). Để nguyên các lựa chọn mặc định.
+**S3 bucket không nên công khai truy cập.** Bucket chứa frontend không được phép truy cập công khai. CloudFront truy cập bucket thông qua cơ chế **Origin Access Control (OAC)**. Do đó, cách duy nhất để truy cập nội dung là qua giao thức HTTPS bảo mật thông qua CloudFront — truy cập trực tiếp bằng URL S3 bị vô hiệu hóa.
 
-![create stack](/images/5-Workshop/5.2-Prerequisite/create-stack1.png)
+**Đánh đổi bảo mật của Cognito.** Các tính năng bảo mật nâng cao được bật (phát hiện thông tin xác thực bị xâm phạm, đăng nhập dựa trên đánh giá rủi ro). Hosted UI được sử dụng thay vì tự xây dựng form đăng nhập, đánh đổi một phần khả năng tùy chỉnh giao diện để lấy một luồng xác thực được duy trì và vá lỗi bảo mật thường xuyên.
 
-+ Lựa chọn 2 mục acknowledgement 
-+ Chọn Create stack
+**Cách xử lý secret hiện tại so với hướng nâng cấp.** Hiện tại, API key mà frontend sử dụng được lấy thông qua terraform output và đặt thủ công vào cấu hình môi trường. Hướng nâng cấp trong tương lai sẽ chuyển việc này sang **AWS Secrets Manager** với cơ chế xoay vòng (rotation) tự động, loại bỏ hoàn toàn bước thủ công.
 
-![create stack](/images/5-Workshop/5.2-Prerequisite/create-stack2.png)
+**CIS AWS Foundations Benchmark v1.4 Level 1 — mức độ tuân thủ hiện tại: 60%.** Có hai lỗ hổng đã biết được chấp nhận như những đánh đổi có chủ đích trong bối cảnh một dự án học tập có ngân sách hạn chế:
 
-Quá trình triển khai CloudFormation cần khoảng 15 phút để hoàn thành.
+- IAM role của CodeBuild hiện đang cấp AdministratorAccess thay vì tuân theo policy được giới hạn phạm vi, do bộ quyền cần thiết cho Terraform phụ thuộc vào tài nguyên đang được thay đổi, trong khi việc thiết lập quyền hạn chế chính xác tuyệt đối có mức ưu tiên thấp hơn so với ngân sách dự án (50 đô-la/tháng) và thời gian thực hiện.
+- Xác thực đa yếu tố (MFA) đã được thiết lập cho một user quản trị cá nhân (xem lại phần Prerequisites), nhưng chưa được áp dụng bắt buộc ở cấp độ IAM policy cho toàn bộ các tài khoản.
+Cả hai vấn đề đều được ghi nhận rõ ràng tại đây, kèm kế hoạch khắc phục ở Mục 6.2 (Simple Security Hardening).
 
-![complete](/images/5-Workshop/5.2-Prerequisite/complete.png)
+#### Khả năng mở rộng (Scalability)
 
-+ 2 VPCs đã được tạo
-
-![vpcs](/images/5-Workshop/5.2-Prerequisite/vpcs.png)
-
-+ 3 EC2s đã được tạo
-
-![EC2](/images/5-Workshop/5.2-Prerequisite/ec2.png)
+Mọi lựa chọn về compute trong kiến trúc này đều đã có khả năng tự động scale về 0 và scale trở lại: Lambda scale theo từng request, DynamoDB tính phí theo nhu cầu sử dụng scale theo lưu lượng, API Gateway và CloudFront xử lý các đợt tăng đột biến lưu lượng một cách tự nhiên. Không điều gì trong số này cần can thiệp thủ công ở mức lưu lượng mà workshop này hướng tới.
+Đối với môi trường production ở quy mô thực tế, sẽ cần đưa vào các thay đổi sau — được đề cập trong tài liệu này như "hiện chưa cần thiết, nhưng đây là những gì sẽ thay đổi" chứ không phải là hạng mục cần thực hiện trong workshop này:
+- **Provisioned concurrency** cho Lambda để loại bỏ độ trễ cold-start trong các giai đoạn tải cao kéo dài.
+- **API Gateway response caching** hiện đang bị bỏ qua vì lý do chi phí (giải thích ở Mục 6.1), việc bổ sung tính năng này sẽ giúp giảm số lượt gọi Bedrock đối với các input bị lặp lại khi lưu lượng truy cập cao.
+- **Triển khai đa vùng (Multi-region deployment)** để hỗ trợ vấn đề độ trễ và khôi phục sau thảm họa (disaster recovery) — workshop này không yêu cầu điều đó do chỉ vận hành trong một vùng duy nhất (ap-southeast-1), với các lệnh gọi Bedrock chỉ được chuyển hướng sang vùng khác nhằm đảm bảo tính khả dụng của model.
