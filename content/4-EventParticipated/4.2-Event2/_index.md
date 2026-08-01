@@ -1,126 +1,84 @@
 ---
-title: "Event 2"
-date: 2024-01-01
+title: "AgentForge Deepdive - Day 1"
+date: 2026-08-01
 weight: 1
 chapter: false
-pre: " <b> 4.2. </b> "
+pre: " <b> 4.2 </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy it verbatim** into your report, including this warning.
-{{% /notice %}}
-
-# Summary Report: “GenAI-powered App-DB Modernization workshop”
+# AgentForge - Building Production-Ready Agentic Systems Using Amazon Bedrock AgentCore (Day 1)
 
 ### Event Objectives
 
-- Share best practices in modern application design
-- Introduce Domain-Driven Design (DDD) and event-driven architecture
-- Provide guidance on selecting the right compute services
-- Present AI tools to support the development lifecycle
+- Theory: Introduction to Amazon Bedrock AgentCore L300 (Runtime, Gateway, Identity)
+- Hands-on lab: Build & Deploy AI Agents on Amazon Bedrock AgentCore using Vibe Coding with Kiro
+  - Deploy a basic agent in AgentCore
+  - Connect to external tools and knowledge bases
+  - Add a web UI with Cognito authentication
 
 ### Speakers
 
-- **Jignesh Shah** – Director, Open Source Databases
-- **Erica Liu** – Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** – Assc. Specialist SA, Serverless Amazon Web Services
+- **Nghia Tran** – Agentic SA
+- **Anh Pham** – Cloud Consultant, G-AsiaPacific Vietnam
 
-### Key Highlights
 
-#### Identifying the drawbacks of legacy application architecture
+#### What MCP and A2A solve
 
-- Long product release cycles → Lost revenue/missed opportunities  
-- Inefficient operations → Reduced productivity, higher costs  
-- Non-compliance with security regulations → Security breaches, loss of reputation  
+- **A2A (Agent2Agent)**: protocol for agent-to-agent communication
+- **MCP (Model Context Protocol)**: standard protocol for agents to reach tools/data (Slack, GitLab, S3, Jira, internal APIs) without custom integration code per tool
 
-#### Transitioning to modern application architecture – Microservices
+#### Strands Agents SDK
 
-Migrating to a modular system — each function is an **independent service** communicating via **events**, built on three core pillars:
+- Open-source SDK for building agents with minimal code
+- Core loop: prompt → agent → invoke model (get reasoning/tool selection) → execute tool → return result → final response
+- Native tool + MCP support, integrates with AWS services, supports custom model providers
 
-- **Queue Management**: Handle asynchronous tasks  
-- **Caching Strategy**: Optimize performance  
-- **Message Handling**: Flexible inter-service communication  
+#### Amazon Bedrock AgentCore — platform overview
 
-#### Domain-Driven Design (DDD)
+- Three pillars: ship agents fast, connect to anything, optimize continuously
+- Underlying principles: security at scale, enterprise readiness, deterministic control
 
-- **Four-step method**: Identify domain events → arrange timeline → identify actors → define bounded contexts  
-- **Bookstore case study**: Demonstrates real-world DDD application  
-- **Context mapping**: 7 patterns for integrating bounded contexts  
+#### AgentCore Runtime
 
-#### Event-Driven Architecture
+- Secure, serverless runtime for deploying/scaling agents and tools (e.g. MCP servers), independent of framework/protocol/model
+- Package as Docker image (up to 2GB, via ECR) or zip file (up to 250MB compressed / 750MB uncompressed, via S3)
+- Endpoints and versions: agent versions can be created/updated independently of which endpoint (e.g. DEFAULT, PROD) points at them
+- True session isolation: each session runs in its own microVM (Firecracker) — separate compute, memory, filesystem per session
+- Supports async/long-running background tasks and bi-directional audio+text streaming (e.g. Nova Sonic 2, Google Live API, OpenAI Realtime API)
 
-- **3 integration patterns**: Publish/Subscribe, Point-to-point, Streaming  
-- **Benefits**: Loose coupling, scalability, resilience  
-- **Sync vs async comparison**: Understanding the trade-offs  
+#### AgentCore Identity
 
-#### Compute Evolution
+- Handles inbound auth (user → app → agent) and outbound auth (agent → tools/vault)
+- Four parts: Workload Identities, Credential Providers, Token Vault, Broker Logic
+- Client secrets never leave the vault and never reach agent code or the LLM
 
-- **Shared Responsibility Model**: EC2 → ECS → Fargate → Lambda  
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value  
-- **Functions vs Containers**: Criteria for appropriate choice  
+#### AgentCore Gateway
 
-#### Amazon Q Developer
+- Single entry point connecting multiple agents to multiple downstream APIs/tools/resources
+- Built-in: MCP support, tool creation/search, authorization, fine-grained access control, private connectivity, tools filtering
+- Backed by AgentCore Identity (auth) and CloudWatch (observability)
+- Supports secure private inbound connectivity (PrivateLink) for clients on separate VPCs or corporate networks
 
-- **SDLC automation**: From planning to maintenance  
-- **Code transformation**: Java upgrade, .NET modernization  
-- **AWS Transform agents**: VMware, Mainframe, .NET migration  
+#### Hands-on lab (vibe coding with Kiro)
+
+- Kiro: AI-powered IDE that generates code from natural-language descriptions (vibe coding) — no manual coding
+- Lab built a Returns & Refunds agent in stages: base agent → persistent memory → Gateway/Lambda/Cognito auth → Runtime deployment → observability → evaluations → policies
+- Progress today: completed Lab 1 (Kiro setup/features) and part of Lab 2 (through roughly agent build + memory); Gateway, web UI/Cognito, observability, evaluations, and policies not yet reached
 
 ### Key Takeaways
 
-#### Design Mindset
-
-- **Business-first approach**: Always start from the business domain, not the technology  
-- **Ubiquitous language**: Importance of a shared vocabulary between business and tech teams  
-- **Bounded contexts**: Identifying and managing complexity in large systems  
-
-#### Technical Architecture
-
-- **Event storming technique**: Practical method for modeling business processes  
-- Use **event-driven communication** instead of synchronous calls  
-- **Integration patterns**: When to use sync, async, pub/sub, streaming  
-- **Compute spectrum**: Criteria for choosing between VM, containers, and serverless  
-
-#### Modernization Strategy
-
-- **Phased approach**: No rushing — follow a clear roadmap  
-- **7Rs framework**: Multiple modernization paths depending on the application  
-- **ROI measurement**: Cost reduction + business agility  
+- AgentCore separates concerns cleanly: Runtime (execution/scaling), Gateway (tool/API access), Identity (auth) — each independently configurable
+- Session isolation via microVMs is a real architectural guarantee, not just a marketing claim — relevant when handling any per-user state
+- Vibe coding (Kiro) shifts effort from writing infrastructure code to describing intent precisely; the underlying AWS resources (Lambda, Cognito, IAM) still get created and still need to be understood for debugging and cost control
+- Async/background task patterns matter for any agent that calls slow tools or runs multi-step workflows
 
 ### Applying to Work
 
-- **Apply DDD** to current projects: Event storming sessions with business teams  
-- **Refactor microservices**: Use bounded contexts to define service boundaries  
-- **Implement event-driven patterns**: Replace some sync calls with async messaging  
-- **Adopt serverless**: Pilot AWS Lambda for suitable use cases  
-- **Try Amazon Q Developer**: Integrate into the dev workflow to boost productivity  
+- Review whether [[doc-summarizer]]'s current direct Lambda/Bedrock calls would benefit from AgentCore Gateway if the project ever needs to call multiple external tools/APIs through one managed layer
+- Compare current auth handling in the project against AgentCore Identity's model (short-lived workload tokens, secrets never touching application code)
+- Revisit session/state handling in the project's Lambda functions against the Runtime session-isolation model
+- Continue the lab in a follow-up session to reach Gateway, Cognito web UI, and observability parts
 
 ### Event Experience
 
-Attending the **“GenAI-powered App-DB Modernization”** workshop was extremely valuable, giving me a comprehensive view of modernizing applications and databases using advanced methods and tools. Key experiences included:
-
-#### Learning from highly skilled speakers
-- Experts from AWS and major tech organizations shared **best practices** in modern application design.  
-- Through real-world case studies, I gained a deeper understanding of applying **DDD** and **Event-Driven Architecture** to large projects.  
-
-#### Hands-on technical exposure
-- Participating in **event storming** sessions helped me visualize how to **model business processes** into domain events.  
-- Learned how to **split microservices** and define **bounded contexts** to manage large-system complexity.  
-- Understood trade-offs between **synchronous and asynchronous communication** and integration patterns like **pub/sub, point-to-point, streaming**.  
-
-#### Leveraging modern tools
-- Explored **Amazon Q Developer**, an AI tool for SDLC support from planning to maintenance.  
-- Learned to **automate code transformation** and pilot serverless with **AWS Lambda** to improve productivity.  
-
-#### Networking and discussions
-- The workshop offered opportunities to exchange ideas with experts, peers, and business teams, enhancing the **ubiquitous language** between business and tech.  
-- Real-world examples reinforced the importance of the **business-first approach** rather than focusing solely on technology.  
-
-#### Lessons learned
-- Applying DDD and event-driven patterns reduces **coupling** while improving **scalability** and **resilience**.  
-- Modernization requires a **phased approach** with **ROI measurement**; rushing the process can be risky.  
-- AI tools like Amazon Q Developer can significantly **boost productivity** when integrated into the current workflow.  
-
-#### Some event photos
-*Add your event photos here*  
-
-> Overall, the event not only provided technical knowledge but also helped me reshape my thinking about application design, system modernization, and cross-team collaboration.
+Attended AgentForge Deepdive Day 1, covering Amazon Bedrock AgentCore theory (Runtime, Gateway, Identity) and a hands-on lab building a Returns & Refunds agent through vibe coding with Kiro. Completed Lab 1 and part of Lab 2; remaining lab parts (Gateway, Cognito web UI, observability, evaluations, policies) are still to do.

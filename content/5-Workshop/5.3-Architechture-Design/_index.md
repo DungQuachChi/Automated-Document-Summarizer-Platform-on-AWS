@@ -12,11 +12,11 @@ pre : " <b> 5.3. </b> "
 
 #### CI/CD Pipeline Path
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.png)
+![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.png.jpeg)
 
 #### Weekly Report Path
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.png)
+![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.jpeg)
 
 #### Services Table
 

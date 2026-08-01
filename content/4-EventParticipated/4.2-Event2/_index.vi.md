@@ -1,125 +1,84 @@
 ---
-title: "Event 2"
-date: 2024-01-01
+title: "AgentForge Deepdive - Ngày 1"
+date: 2026-08-01
 weight: 1
 chapter: false
-pre: " <b> 4.2. </b> "
+pre: " <b> 4.x </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+# AgentForge - Xây dựng hệ thống Agentic sẵn sàng Production với Amazon Bedrock AgentCore (Ngày 1)
 
-# Bài thu hoạch “GenAI-powered App-DB Modernization workshop”
+### Mục tiêu sự kiện
 
-### Mục Đích Của Sự Kiện
+- Lý thuyết: Giới thiệu Amazon Bedrock AgentCore mức L300 (Runtime, Gateway, Identity)
+- Thực hành: Xây dựng & Triển khai AI Agent trên Amazon Bedrock AgentCore bằng Vibe Coding với Kiro
+  - Triển khai một agent cơ bản trên AgentCore
+  - Kết nối với các công cụ bên ngoài và knowledge base
+  - Thêm giao diện web với xác thực Cognito
 
-- Chia sẻ best practices trong thiết kế ứng dụng hiện đại
-- Giới thiệu phương pháp DDD và event-driven architecture
-- Hướng dẫn lựa chọn compute services phù hợp
-- Giới thiệu công cụ AI hỗ trợ development lifecycle
+### Diễn giả
 
-### Danh Sách Diễn Giả
+- *(bổ sung sau)*
 
-- **Jignesh Shah** - Director, Open Source Databases
-- **Erica Liu** - Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** - Assc. Specialist SA, Serverless Amazon Web Services
+### Điểm nổi bật
 
-### Nội Dung Nổi Bật
+#### MCP và A2A giải quyết vấn đề gì
 
-#### Đưa ra các ảnh hưởng tiêu cực của kiến trúc ứng dụng cũ
+- **A2A (Agent2Agent)**: giao thức giao tiếp giữa các agent với nhau
+- **MCP (Model Context Protocol)**: giao thức chuẩn để agent truy cập công cụ/dữ liệu (Slack, GitLab, S3, Jira, API nội bộ) mà không cần viết tích hợp riêng cho từng công cụ
 
-- Thời gian release sản phẩm lâu → Mất doanh thu/bỏ lỡ cơ hội
-- Hoạt động kém hiệu quả → Mất năng suất, tốn kém chi phí
-- Không tuân thủ các quy định về bảo mật → Mất an ninh, uy tín
+#### Strands Agents SDK
 
-#### Chuyển đổi sang kiến trúc ứng dụng mới - Microservice Architecture
+- SDK mã nguồn mở để xây dựng agent với lượng code tối thiểu
+- Vòng lặp cốt lõi: prompt → agent → gọi model (nhận reasoning/lựa chọn tool) → thực thi tool → trả kết quả → phản hồi cuối cùng
+- Hỗ trợ tool có sẵn + MCP, tích hợp với các dịch vụ AWS, hỗ trợ nhiều nhà cung cấp model tùy chỉnh
 
-Chuyển đổi thành hệ thống modular – từng chức năng là một **dịch vụ độc lập** giao tiếp với nhau qua **sự kiện** với 3 trụ cột cốt lõi:
+#### Amazon Bedrock AgentCore — tổng quan nền tảng
 
-- **Queue Management**: Xử lý tác vụ bất đồng bộ
-- **Caching Strategy:** Tối ưu performance
-- **Message Handling:** Giao tiếp linh hoạt giữa services
+- Ba trụ cột: triển khai agent nhanh, kết nối với mọi thứ, tối ưu liên tục
+- Nguyên tắc nền tảng: bảo mật ở quy mô lớn, sẵn sàng cho doanh nghiệp, kiểm soát tất định (deterministic)
 
-#### Domain-Driven Design (DDD)
+#### AgentCore Runtime
 
-- **Phương pháp 4 bước**: Xác định domain events → sắp xếp timeline → identify actors → xác định bounded contexts
-- **Case study bookstore**: Minh họa cách áp dụng DDD thực tế
-- **Context mapping**: 7 patterns tích hợp bounded contexts
+- Môi trường runtime serverless bảo mật, chuyên dùng để triển khai/mở rộng agent và tool (ví dụ: MCP server), không phụ thuộc framework/giao thức/model
+- Đóng gói dưới dạng Docker image (tối đa 2GB, qua ECR) hoặc file zip (tối đa 250MB nén / 750MB chưa nén, qua S3)
+- Endpoint và phiên bản: có thể tạo/cập nhật phiên bản agent độc lập với endpoint nào (ví dụ DEFAULT, PROD) đang trỏ tới nó
+- Cô lập phiên (session) thực sự: mỗi session chạy trong một microVM riêng (Firecracker) — tách biệt compute, memory, filesystem cho từng session
+- Hỗ trợ tác vụ chạy nền bất đồng bộ/dài hạn và streaming âm thanh + văn bản hai chiều (ví dụ: Nova Sonic 2, Google Live API, OpenAI Realtime API)
 
-#### Event-Driven Architecture
+#### AgentCore Identity
 
-- **3 patterns tích hợp**: Publish/Subscribe, Point-to-point, Streaming
-- **Lợi ích**: Loose coupling, scalability, resilience
-- **So sánh sync vs async**: Hiểu rõ trade-offs (sự đánh đổi)
+- Xử lý xác thực chiều vào (user → app → agent) và chiều ra (agent → tool/vault)
+- Bốn thành phần: Workload Identities, Credential Providers, Token Vault, Broker Logic
+- Client secret không bao giờ rời khỏi vault và không bao giờ tiếp cận được code của agent hay LLM
 
-#### Compute Evolution
+#### AgentCore Gateway
 
-- **Shared Responsibility Model**: Từ EC2 → ECS → Fargate → Lambda
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value
-- **Functions vs Containers**: Criteria lựa chọn phù hợp
+- Điểm truy cập duy nhất kết nối nhiều agent với nhiều API/tool/tài nguyên phía sau
+- Tính năng sẵn có: hỗ trợ MCP, tạo/tìm kiếm tool, phân quyền, kiểm soát truy cập chi tiết, kết nối riêng tư (private connectivity), lọc tool
+- Được hỗ trợ bởi AgentCore Identity (xác thực) và CloudWatch (observability)
+- Hỗ trợ kết nối inbound riêng tư an toàn (PrivateLink) cho client nằm trên VPC khác hoặc mạng nội bộ công ty
 
-#### Amazon Q Developer
+#### Thực hành (vibe coding với Kiro)
 
-- **SDLC automation**: Từ planning đến maintenance
-- **Code transformation**: Java upgrade, .NET modernization
-- **AWS Transform agents**: VMware, Mainframe, .NET migration
+- Kiro: IDE tích hợp AI, sinh code từ mô tả bằng ngôn ngữ tự nhiên (vibe coding) — không cần viết code thủ công
+- Bài lab xây dựng agent Returns & Refunds theo từng giai đoạn: agent cơ bản → bộ nhớ liên tục (persistent memory) → Gateway/Lambda/xác thực Cognito → triển khai Runtime → observability → evaluations → policies
+- Tiến độ hôm nay: hoàn thành Lab 1 (thiết lập/tính năng Kiro) và một phần Lab 2 (khoảng đến phần xây dựng agent + bộ nhớ); chưa đến các phần Gateway, giao diện web/Cognito, observability, evaluations, và policies
 
-### Những Gì Học Được
+### Bài học rút ra
 
-#### Tư Duy Thiết Kế
+- AgentCore phân tách rõ ràng các mối quan tâm: Runtime (thực thi/mở rộng quy mô), Gateway (truy cập tool/API), Identity (xác thực) — mỗi phần có thể cấu hình độc lập
+- Cô lập session bằng microVM là một đảm bảo kiến trúc thực sự, không chỉ là lời quảng cáo — quan trọng khi xử lý trạng thái riêng theo từng user
+- Vibe coding (Kiro) chuyển trọng tâm từ việc viết code hạ tầng sang việc mô tả ý định một cách chính xác; các tài nguyên AWS bên dưới (Lambda, Cognito, IAM) vẫn được tạo ra và vẫn cần được hiểu rõ để debug và kiểm soát chi phí
+- Các mẫu xử lý tác vụ bất đồng bộ/chạy nền quan trọng với bất kỳ agent nào gọi tool chậm hoặc chạy quy trình nhiều bước
 
-- **Business-first approach**: Luôn bắt đầu từ business domain, không phải technology
-- **Ubiquitous language**: Importance của common vocabulary giữa business và tech teams
-- **Bounded contexts**: Cách identify và manage complexity trong large systems
+### Áp dụng vào công việc
 
-#### Kiến Trúc Kỹ Thuật
+- Xem xét liệu các lệnh gọi Lambda/Bedrock trực tiếp hiện tại của [[doc-summarizer]] có nên dùng AgentCore Gateway hay không, nếu dự án cần gọi nhiều tool/API bên ngoài qua một lớp quản lý duy nhất trong tương lai
+- So sánh cách xử lý xác thực hiện tại của dự án với mô hình AgentCore Identity (token workload ngắn hạn, secret không chạm vào code ứng dụng)
+- Xem lại cách xử lý session/state trong các hàm Lambda của dự án so với mô hình cô lập session của Runtime
+- Tiếp tục bài lab trong buổi sau để hoàn thành các phần Gateway, giao diện web Cognito, và observability
 
-- **Event storming technique**: Phương pháp thực tế để mô hình hóa quy trình kinh doanh
-- Sử dụng **Event-driven communication** thay vì synchronous calls
-- **Integration patterns**: Hiểu khi nào dùng sync, async, pub/sub, streaming
-- **Compute spectrum**: Criteria chọn từ VM → containers → serverless
+### Trải nghiệm sự kiện
 
-#### Chiến Lược Hiện Đại Hóa
-
-- **Phased approach**: Không rush, phải có roadmap rõ ràng
-- **7Rs framework**: Nhiều con đường khác nhau tùy thuộc vào đặc điểm của mỗi ứng dụng
-- **ROI measurement**: Cost reduction + business agility
-
-### Ứng Dụng Vào Công Việc
-
-- **Áp dụng DDD** cho project hiện tại: Event storming sessions với business team
-- **Refactor microservices**: Sử dụng bounded contexts để identify service boundaries
-- **Implement event-driven patterns**: Thay thế một số sync calls bằng async messaging
-- **Serverless adoption**: Pilot AWS Lambda cho một số use cases phù hợp
-- **Try Amazon Q Developer**: Integrate vào development workflow để boost productivity
-
-### Trải nghiệm trong event
-
-Tham gia workshop **“GenAI-powered App-DB Modernization”** là một trải nghiệm rất bổ ích, giúp tôi có cái nhìn toàn diện về cách hiện đại hóa ứng dụng và cơ sở dữ liệu bằng các phương pháp và công cụ hiện đại. Một số trải nghiệm nổi bật:
-
-#### Học hỏi từ các diễn giả có chuyên môn cao
-- Các diễn giả đến từ AWS và các tổ chức công nghệ lớn đã chia sẻ **best practices** trong thiết kế ứng dụng hiện đại.
-- Qua các case study thực tế, tôi hiểu rõ hơn cách áp dụng **Domain-Driven Design (DDD)** và **Event-Driven Architecture** vào các project lớn.
-
-#### Trải nghiệm kỹ thuật thực tế
-- Tham gia các phiên trình bày về **event storming** giúp tôi hình dung cách **mô hình hóa quy trình kinh doanh** thành các domain events.
-- Học cách **phân tách microservices** và xác định **bounded contexts** để quản lý sự phức tạp của hệ thống lớn.
-- Hiểu rõ trade-offs giữa **synchronous và asynchronous communication** cũng như các pattern tích hợp như **pub/sub, point-to-point, streaming**.
-
-#### Ứng dụng công cụ hiện đại
-- Trực tiếp tìm hiểu về **Amazon Q Developer**, công cụ AI hỗ trợ SDLC từ lập kế hoạch đến maintenance.
-- Học cách **tự động hóa code transformation** và pilot serverless với **AWS Lambda**, từ đó nâng cao năng suất phát triển.
-
-#### Kết nối và trao đổi
-- Workshop tạo cơ hội trao đổi trực tiếp với các chuyên gia, đồng nghiệp và team business, giúp **nâng cao ngôn ngữ chung (ubiquitous language)** giữa business và tech.
-- Qua các ví dụ thực tế, tôi nhận ra tầm quan trọng của **business-first approach**, luôn bắt đầu từ nhu cầu kinh doanh thay vì chỉ tập trung vào công nghệ.
-
-#### Bài học rút ra
-- Việc áp dụng DDD và event-driven patterns giúp giảm **coupling**, tăng **scalability** và **resilience** cho hệ thống.
-- Chiến lược hiện đại hóa cần **phased approach** và đo lường **ROI**, không nên vội vàng chuyển đổi toàn bộ hệ thống.
-- Các công cụ AI như Amazon Q Developer có thể **boost productivity** nếu được tích hợp vào workflow phát triển hiện tại.
-
-#### Một số hình ảnh khi tham gia sự kiện
-* Thêm các hình ảnh của các bạn tại đây
-> Tổng thể, sự kiện không chỉ cung cấp kiến thức kỹ thuật mà còn giúp tôi thay đổi cách tư duy về thiết kế ứng dụng, hiện đại hóa hệ thống và phối hợp hiệu quả hơn giữa các team.
+Tham dự AgentForge Deepdive Ngày 1, bao gồm phần lý thuyết về Amazon Bedrock AgentCore (Runtime, Gateway, Identity) và bài thực hành xây dựng agent Returns & Refunds bằng vibe coding với Kiro. Đã hoàn thành Lab 1 và một phần Lab 2; các phần lab còn lại (Gateway, giao diện web Cognito, observability, evaluations, policies) vẫn còn phải làm.
