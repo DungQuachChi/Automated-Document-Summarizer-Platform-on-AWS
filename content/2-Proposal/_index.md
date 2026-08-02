@@ -1,5 +1,5 @@
 ---
-title: "Proposal: Automated Serverless Document Summarizer Platform on AWS"
+title: "Proposal"
 date: 2026-08-02
 weight: 2
 chapter: false
