@@ -1,4 +1,4 @@
-baseURL = "https://workshop-sample.awsfcaj.com/"
+baseURL = "https://dungquachchi.github.io/Automated-Document-Summarizer-Platform-on-AWS/"
 relativeURLs = false
 canonifyURLs = false
 defaultContentLanguage = "en"
