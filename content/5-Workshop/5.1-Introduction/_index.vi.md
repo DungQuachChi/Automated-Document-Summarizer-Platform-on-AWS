@@ -20,7 +20,7 @@ Trong bài thực hành này, bạn sẽ xây dựng một nền tảng tóm t�
 
 Trong quá trình xây dựng hệ thống, tài khoản AWS được sử dụng đã chạm mức **hạn mức on-demand bằng 0 (zero on-demand quota)** đối với các mô hình Bedrock, một giới hạn mà AWS áp dụng cho các tài khoản mới. Một AWS Support case xin tăng hạn mức đã bị từ chối ở thời điểm hiện tại, vì khả năng truy cập phụ thuộc vào tuổi tài khoản và mức độ sử dụng, và được đánh giá lại tự động theo thời gian. Trong khi chờ, cờ tính năng (feature flag) `MOCK_SUMMARIZE` ở phía frontend trả về một bản tóm tắt giả để phần demo vẫn dùng được; bản thân Lambda vẫn luôn gọi Bedrock thật, và chỉ cần tắt cờ này (không cần sửa code) là chức năng suy luận thật sẽ hoạt động ngay khi tài khoản đủ điều kiện (xem mục 5.4.2).
 
-![overview](images/5-Workshop/5.1-Workshop-overview/diagram1.png)
+![overview](/images/5-Workshop/5.1-Workshop-overview/diagram1.png)
 
 #### Mục tiêu / Kết quả mong muốn
 
