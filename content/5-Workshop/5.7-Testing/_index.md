@@ -179,7 +179,7 @@ Set `--host` to `http://localhost:8000` for the mock server, or the real API Gat
 
 **Project load testing result:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds, API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause, 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue.
 
-![overview](/images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
+![overview](images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
 
 
 #### Common Errors and Fixes

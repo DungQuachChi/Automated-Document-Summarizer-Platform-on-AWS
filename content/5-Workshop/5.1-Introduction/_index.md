@@ -20,7 +20,7 @@ This workshop is all about the creation of a document summary platform from scra
 
 During the build, the AWS account hit a zero on-demand quota for Bedrock models, an account-level limit AWS applies to new accounts. A Support case to raise it was declined for now, since eligibility depends on account age and usage and is reassessed automatically over time. Meanwhile a `MOCK_SUMMARIZE` flag on the frontend serves a placeholder summary so the demo stays usable; the Lambda itself always calls real Bedrock, and flipping the flag off enables real inference with no code change once the account qualifies (see 5.4.2).
 
-![overview](/images/5-Workshop/5.1-Workshop-overview/diagram1.png)
+![overview](images/5-Workshop/5.1-Workshop-overview/diagram1.png)
 
 #### Goals / Desired Outputs
 

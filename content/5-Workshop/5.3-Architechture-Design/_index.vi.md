@@ -8,15 +8,15 @@ pre : " <b> 5.3. </b> "
 
 #### Luồng dữ liệu tổng quan (End-to-End Dataflow)
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/project_arch.jpeg)
+![overview](images/5-Workshop/5.3-Architechture-Design/project_arch.jpeg)
 
 #### Luồng CI/CD Pipeline
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.jpeg)
+![overview](images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.jpeg)
 
 #### Luồng báo cáo hàng tuần (Weekly Report Path)
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.jpeg)
+![overview](images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.jpeg)
 
 #### Bảng dịch vụ
 

@@ -179,7 +179,7 @@ locust -f locustfile.py --headless -u 50 -r 1 --run-time 60s --host <target-host
 
 **Kết quả load testing của dự án:** một lần chạy với 5 người dùng đồng thời, tăng dần với tốc độ 1 người/giây ở chế độ real-API, cho thấy GET /history hoạt động đúng, trong khi mọi request POST /summarize đều thất bại với mã 502/504 gần như đúng ở giây thứ 29 chính là mức giới hạn timeout tích hợp cứng của API Gateway. Nguyên nhân gốc rễ: logic retry của Lambda đã liên tục thử lại các lỗi throttling từ Bedrock kèm cơ chế backoff theo cấp số nhân, tiêu tốn toàn bộ 30 giây timeout của Lambda trước khi kịp trả về bất kỳ phản hồi nào. Kết quả ở chế độ mock nêu trên đã loại trừ khả năng nguyên nhân đến từ luồng request/xác thực, 50 người dùng đồng thời không gây ra thất bại nào ở chế độ mock, vì vậy lỗi 502/504 là đặc thù của các lệnh gọi Bedrock thật, không phải vấn đề về concurrency hay luồng xử lý code.
 
-![overview](/images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
+![overview](images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
 
 
 #### Các lỗi thường gặp và cách khắc phục
