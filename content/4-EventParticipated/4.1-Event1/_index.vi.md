@@ -1,125 +1,56 @@
 ---
-title: "Event 1"
-date: 2024-01-01
+title: "GameDay thi đấu Cloud Architect"
+date: 2026-06-20
 weight: 1
 chapter: false
-pre: " <b> 4.1. </b> "
+pre: " <b> 4.1 </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+# GameDay thi đấu Cloud Architect
 
-# Bài thu hoạch “GenAI-powered App-DB Modernization workshop”
+### Mục tiêu sự kiện
 
-### Mục Đích Của Sự Kiện
+- Cuộc thi đố vui theo đội về kiến thức kiến trúc cloud, từ cơ bản đến các câu hỏi tình huống thực tế nâng cao
+- 8 đội thi đấu đối kháng qua nhiều vòng
 
-- Chia sẻ best practices trong thiết kế ứng dụng hiện đại
-- Giới thiệu phương pháp DDD và event-driven architecture
-- Hướng dẫn lựa chọn compute services phù hợp
-- Giới thiệu công cụ AI hỗ trợ development lifecycle
+### Diễn giả
 
-### Danh Sách Diễn Giả
+- *(bổ sung sau)*
 
-- **Jignesh Shah** - Director, Open Source Databases
-- **Erica Liu** - Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** - Assc. Specialist SA, Serverless Amazon Web Services
+### Thể lệ
 
-### Nội Dung Nổi Bật
+- Mỗi vòng thi đấu đối kháng giữa 2 đội
+- Mỗi đội có 2 "quyền năng" dùng một lần trong suốt trận:
+  - **50/50**: nếu trả lời đúng, đội nhận được nửa số điểm của câu đó; nếu trả lời sai, không bị trừ điểm
+  - **X2**: nhân đôi số điểm của câu đó, bất kể trả lời đúng hay sai
+- Đội vô địch: **Ngũ Đại Hiệp**
 
-#### Đưa ra các ảnh hưởng tiêu cực của kiến trúc ứng dụng cũ
+### Điểm nổi bật
 
-- Thời gian release sản phẩm lâu → Mất doanh thu/bỏ lỡ cơ hội
-- Hoạt động kém hiệu quả → Mất năng suất, tốn kém chi phí
-- Không tuân thủ các quy định về bảo mật → Mất an ninh, uy tín
+- Các câu hỏi trải rộng độ khó từ định nghĩa dịch vụ cơ bản đến các tình huống xử lý sự cố kiến trúc thực tế
+- Nhiều vòng thi có biến động điểm số đáng chú ý ở cuối trận do các đội dùng quyền năng X2 vào những câu hỏi điểm cao
+- Câu hỏi mẫu (tình huống thực tế, phong cách AWS Solutions Architect):
 
-#### Chuyển đổi sang kiến trúc ứng dụng mới - Microservice Architecture
+  > Một công ty triển khai website thương mại điện tử trên một Auto Scaling group gồm các EC2 instance, đặt sau một Application Load Balancer. Website nhận được nhiều request bất hợp pháp từ nhiều hệ thống với địa chỉ IP thay đổi liên tục, gây ra vấn đề hiệu năng. Giải pháp nào chặn được các request này mà ít ảnh hưởng nhất đến traffic hợp lệ?
+  >
+  > A. Tạo rule thông thường trong AWS WAF và gắn web ACL vào Application Load Balancer
+  > B. Tạo kết nối riêng bằng AWS PrivateLink để chặn các request này
+  > C. Tạo rate-based rule trong AWS WAF và gắn web ACL vào Application Load Balancer
+  > D. Tạo network ACL tùy chỉnh và gắn vào subnet của Application Load Balancer để chặn
 
-Chuyển đổi thành hệ thống modular – từng chức năng là một **dịch vụ độc lập** giao tiếp với nhau qua **sự kiện** với 3 trụ cột cốt lõi:
+  **Đáp án: C** rate-based rule trong WAF chặn dựa trên tốc độ request theo từng IP thay vì dựa trên danh sách IP cố định, nên vẫn hoạt động hiệu quả kể cả khi các IP gây hại liên tục thay đổi, trong khi traffic hợp lệ dưới ngưỡng vẫn không bị ảnh hưởng.
 
-- **Queue Management**: Xử lý tác vụ bất đồng bộ
-- **Caching Strategy:** Tối ưu performance
-- **Message Handling:** Giao tiếp linh hoạt giữa services
+### Bài học rút ra
 
-#### Domain-Driven Design (DDD)
+- Củng cố lại sự khác biệt giữa WAF regular rule (điều kiện khớp cố định) và rate-based rule (dựa trên hành vi/tốc độ, thích ứng với nguồn thay đổi) đây là điểm hay gây nhầm lẫn trong các câu hỏi tình huống
+- Ôn lại lý do vì sao các công cụ ở tầng network (NACL, PrivateLink) không phù hợp để lọc dựa trên *hành vi* traffic thay vì địa chỉ/cổng cố định
+- Định dạng thi đố vui với cơ chế rủi ro/phần thưởng (50/50, X2) giúp việc ôn lại kiến thức nền tảng AWS trở nên thú vị hơn so với việc ôn tập thụ động
 
-- **Phương pháp 4 bước**: Xác định domain events → sắp xếp timeline → identify actors → xác định bounded contexts
-- **Case study bookstore**: Minh họa cách áp dụng DDD thực tế
-- **Context mapping**: 7 patterns tích hợp bounded contexts
+### Áp dụng vào công việc
 
-#### Event-Driven Architecture
+- Ghi nhớ sự khác biệt giữa WAF regular rule và rate-based rule cho các công việc bảo mật endpoint công khai của dự án doc-summarizer sau này
+- Sử dụng định dạng câu hỏi tình huống này như một phương pháp tự ôn tập cho việc luyện thi chứng chỉ AWS hoặc trước các buổi phỏng vấn kỹ thuật
 
-- **3 patterns tích hợp**: Publish/Subscribe, Point-to-point, Streaming
-- **Lợi ích**: Loose coupling, scalability, resilience
-- **So sánh sync vs async**: Hiểu rõ trade-offs (sự đánh đổi)
+### Trải nghiệm sự kiện
 
-#### Compute Evolution
-
-- **Shared Responsibility Model**: Từ EC2 → ECS → Fargate → Lambda
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value
-- **Functions vs Containers**: Criteria lựa chọn phù hợp
-
-#### Amazon Q Developer
-
-- **SDLC automation**: Từ planning đến maintenance
-- **Code transformation**: Java upgrade, .NET modernization
-- **AWS Transform agents**: VMware, Mainframe, .NET migration
-
-### Những Gì Học Được
-
-#### Tư Duy Thiết Kế
-
-- **Business-first approach**: Luôn bắt đầu từ business domain, không phải technology
-- **Ubiquitous language**: Importance của common vocabulary giữa business và tech teams
-- **Bounded contexts**: Cách identify và manage complexity trong large systems
-
-#### Kiến Trúc Kỹ Thuật
-
-- **Event storming technique**: Phương pháp thực tế để mô hình hóa quy trình kinh doanh
-- Sử dụng **Event-driven communication** thay vì synchronous calls
-- **Integration patterns**: Hiểu khi nào dùng sync, async, pub/sub, streaming
-- **Compute spectrum**: Criteria chọn từ VM → containers → serverless
-
-#### Chiến Lược Hiện Đại Hóa
-
-- **Phased approach**: Không rush, phải có roadmap rõ ràng
-- **7Rs framework**: Nhiều con đường khác nhau tùy thuộc vào đặc điểm của mỗi ứng dụng
-- **ROI measurement**: Cost reduction + business agility
-
-### Ứng Dụng Vào Công Việc
-
-- **Áp dụng DDD** cho project hiện tại: Event storming sessions với business team
-- **Refactor microservices**: Sử dụng bounded contexts để identify service boundaries
-- **Implement event-driven patterns**: Thay thế một số sync calls bằng async messaging
-- **Serverless adoption**: Pilot AWS Lambda cho một số use cases phù hợp
-- **Try Amazon Q Developer**: Integrate vào development workflow để boost productivity
-
-### Trải nghiệm trong event
-
-Tham gia workshop **“GenAI-powered App-DB Modernization”** là một trải nghiệm rất bổ ích, giúp tôi có cái nhìn toàn diện về cách hiện đại hóa ứng dụng và cơ sở dữ liệu bằng các phương pháp và công cụ hiện đại. Một số trải nghiệm nổi bật:
-
-#### Học hỏi từ các diễn giả có chuyên môn cao
-- Các diễn giả đến từ AWS và các tổ chức công nghệ lớn đã chia sẻ **best practices** trong thiết kế ứng dụng hiện đại.
-- Qua các case study thực tế, tôi hiểu rõ hơn cách áp dụng **Domain-Driven Design (DDD)** và **Event-Driven Architecture** vào các project lớn.
-
-#### Trải nghiệm kỹ thuật thực tế
-- Tham gia các phiên trình bày về **event storming** giúp tôi hình dung cách **mô hình hóa quy trình kinh doanh** thành các domain events.
-- Học cách **phân tách microservices** và xác định **bounded contexts** để quản lý sự phức tạp của hệ thống lớn.
-- Hiểu rõ trade-offs giữa **synchronous và asynchronous communication** cũng như các pattern tích hợp như **pub/sub, point-to-point, streaming**.
-
-#### Ứng dụng công cụ hiện đại
-- Trực tiếp tìm hiểu về **Amazon Q Developer**, công cụ AI hỗ trợ SDLC từ lập kế hoạch đến maintenance.
-- Học cách **tự động hóa code transformation** và pilot serverless với **AWS Lambda**, từ đó nâng cao năng suất phát triển.
-
-#### Kết nối và trao đổi
-- Workshop tạo cơ hội trao đổi trực tiếp với các chuyên gia, đồng nghiệp và team business, giúp **nâng cao ngôn ngữ chung (ubiquitous language)** giữa business và tech.
-- Qua các ví dụ thực tế, tôi nhận ra tầm quan trọng của **business-first approach**, luôn bắt đầu từ nhu cầu kinh doanh thay vì chỉ tập trung vào công nghệ.
-
-#### Bài học rút ra
-- Việc áp dụng DDD và event-driven patterns giúp giảm **coupling**, tăng **scalability** và **resilience** cho hệ thống.
-- Chiến lược hiện đại hóa cần **phased approach** và đo lường **ROI**, không nên vội vàng chuyển đổi toàn bộ hệ thống.
-- Các công cụ AI như Amazon Q Developer có thể **boost productivity** nếu được tích hợp vào workflow phát triển hiện tại.
-
-#### Một số hình ảnh khi tham gia sự kiện
-* Thêm các hình ảnh của các bạn tại đây
-> Tổng thể, sự kiện không chỉ cung cấp kiến thức kỹ thuật mà còn giúp tôi thay đổi cách tư duy về thiết kế ứng dụng, hiện đại hóa hệ thống và phối hợp hiệu quả hơn giữa các team.
+Tham dự ngày hội thi đố vui Cloud Architect với tư cách là một trong 8 đội thi đấu. Câu hỏi trải dài từ cơ bản đến các tình huống kiến trúc cloud thực tế nâng cao, kèm theo quyền năng 50/50 và X2 tạo thêm yếu tố chiến thuật/cạnh tranh ở mỗi vòng. Đội Ngũ Đại Hiệp đã giành chiến thắng. Thể lệ thi đấu rất cuốn hút, với nhiều pha lội ngược dòng điểm số ở cuối mỗi trận đấu giữa các đội.

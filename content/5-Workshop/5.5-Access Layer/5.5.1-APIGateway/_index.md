@@ -8,7 +8,7 @@ pre : " 5.5.1. "
 
 #### Goal
 
-Set up Cognito to issue and validate JWTs, and API Gateway to enforce that token plus an API key and usage plan on every request — both declared in Terraform, with no post-deploy console configuration needed.
+Set up Cognito to issue and validate JWTs, and API Gateway to enforce that token plus an API key and usage plan on every request. Both declared in Terraform, with no post-deploy console configuration needed.
 
 #### Cognito (modules/auth)
 
@@ -29,8 +29,8 @@ Set up Cognito to issue and validate JWTs, and API Gateway to enforce that token
 
 ```bash
 terraform apply
-terraform output user_pool_id
-terraform output client_id
+terraform output cognito_user_pool_id
+terraform output cognito_app_client_id
 terraform output api_invoke_url
 terraform output -raw api_key_value
 ```
@@ -45,7 +45,7 @@ When scripted/load-test type of access is needed, InitiateAuth/USER_PASSWORD_AUT
 
 | Error | Cause | Fix |
 |---|---|---|
-| invalid_request on Hosted UI login | Redirect URL doesn't match callback_urls | Confirm exact match — no typos/extra paths |
+| invalid_request on Hosted UI login | Redirect URL doesn't match callback_urls | Confirm exact match no typos/extra paths |
 | grant_type=password returns 400 | Hosted UI's token endpoint only supports authorization_code/refresh_token | Use InitiateAuth/USER_PASSWORD_AUTH instead |
 | {"message": "Unauthorized"} / "Forbidden" from the API | Missing/expired JWT, or missing/invalid x-api-key | Re-authenticate via Hosted UI; confirm x-api-key matches terraform output -raw api_key_value |
-| Route/CORS changes don't seem to apply | Confusing this with manual console redeploys | terraform plan — if aws_api_gateway_deployment shows pending replacement, terraform apply |
+| Route/CORS changes don't seem to apply | Confusing this with manual console redeploys | terraform plan if aws_api_gateway_deployment shows pending replacement, terraform apply |

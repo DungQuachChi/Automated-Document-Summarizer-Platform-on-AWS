@@ -15,10 +15,10 @@ pre: " <b> 5.1. </b> "
 
 Trong bài thực hành này, bạn sẽ xây dựng một nền tảng tóm tắt tài liệu hoàn chỉnh từ đầu đến cuối (end-to-end).
 
-- **Tính năng** — Phía ứng dụng (client) gửi văn bản dài (ghi chú bài giảng, tài liệu đọc, bài báo) thông qua một API bảo mật và nhận lại bản tóm tắt do AI tạo ra nhờ sức mạnh của Amazon Bedrock.
-- **Nội dung trọng tâm** — Các thực hành DevOps cần thiết để xây dựng, bảo mật và vận hành tính năng đó: Infrastructure as Code với Terraform, quy trình CI/CD với bước phê duyệt thủ công, hệ thống giám sát CloudWatch đi kèm cảnh báo kích hoạt thực tế, cùng tiêu chuẩn an toàn bảo mật tuân thủ định hướng CIS.
+- **Tính năng**: Phía ứng dụng (client) gửi văn bản dài (ghi chú bài giảng, tài liệu đọc, bài báo) thông qua một API bảo mật và nhận lại bản tóm tắt do AI tạo ra nhờ sức mạnh của Amazon Bedrock.
+- **Nội dung trọng tâm**: Các thực hành DevOps cần thiết để xây dựng, bảo mật và vận hành tính năng đó: Infrastructure as Code với Terraform, quy trình CI/CD với bước phê duyệt thủ công, hệ thống giám sát CloudWatch đi kèm cảnh báo kích hoạt thực tế, cùng tiêu chuẩn an toàn bảo mật tuân thủ định hướng CIS.
 
-Trong quá trình xây dựng hệ thống này, tài khoản AWS được sử dụng đã chạm mức **hạn mức on-demand bằng 0 (zero on-demand quota)** đối với các mô hình Bedrock — một giới hạn mà AWS áp dụng cho các tài khoản mới. Nhờ cờ tính năng (feature flag) `MOCK_SUMMARIZE`, phần còn lại của quy trình vẫn tiếp tục hoạt động bình thường trong khi sự cố hạn mức được giải quyết.
+Trong quá trình xây dựng hệ thống, tài khoản AWS được sử dụng đã chạm mức **hạn mức on-demand bằng 0 (zero on-demand quota)** đối với các mô hình Bedrock, một giới hạn mà AWS áp dụng cho các tài khoản mới. Một AWS Support case xin tăng hạn mức đã bị từ chối ở thời điểm hiện tại, vì khả năng truy cập phụ thuộc vào tuổi tài khoản và mức độ sử dụng, và được đánh giá lại tự động theo thời gian. Trong khi chờ, cờ tính năng (feature flag) `MOCK_SUMMARIZE` ở phía frontend trả về một bản tóm tắt giả để phần demo vẫn dùng được; bản thân Lambda vẫn luôn gọi Bedrock thật, và chỉ cần tắt cờ này (không cần sửa code) là chức năng suy luận thật sẽ hoạt động ngay khi tài khoản đủ điều kiện (xem mục 5.4.2).
 
 ![overview](/images/5-Workshop/5.1-Workshop-overview/diagram1.png)
 
@@ -35,8 +35,8 @@ Sau khi hoàn thành bài thực hành này, các thành phần sau sẽ đượ
 
 #### Tiêu chí thành công
 
-- [ ] Luồng xác thực hoạt động hoàn chỉnh end-to-end (Cognito Hosted UI → JWT → gọi API hợp lệ)
-- [ ] Dashboard CloudWatch hiển thị lưu lượng yêu cầu thực tế
-- [ ] Ít nhất một cảnh báo CloudWatch được kích hoạt và gửi email qua SNS
-- [ ] Chi phí hàng tháng duy trì dưới $50 cho tất cả các dịch vụ
-- [ ] Tất cả tài nguyên đã được xóa bỏ hoàn toàn mà không để lại chi phí phát sinh ẩn (được xác minh trong Cost Explorer)
+- Luồng xác thực hoạt động hoàn chỉnh end-to-end (Cognito Hosted UI → JWT → gọi API hợp lệ)
+- Dashboard CloudWatch hiển thị lưu lượng yêu cầu thực tế
+- Ít nhất một cảnh báo CloudWatch được kích hoạt và gửi email qua SNS
+- Chi phí hàng tháng duy trì dưới $50 cho tất cả các dịch vụ
+- Tất cả tài nguyên đã được xóa bỏ hoàn toàn mà không để lại chi phí phát sinh ẩn (được xác minh trong Cost Explorer)

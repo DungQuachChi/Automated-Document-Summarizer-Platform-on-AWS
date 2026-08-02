@@ -1,6 +1,6 @@
 ---
 title: "Internship Report"
-date: 2024-01-01
+date: 2026-04-10
 weight: 1
 chapter: false
 ---
@@ -9,7 +9,7 @@ chapter: false
 # Internship Report
 
 ### Student Information:
-&emsp; **Full Name:** Quach Chi Dung
+&emsp; **Full Name:** Quach Chi Dung 
 
 &emsp; **Phone Number:** 0379113881
 
@@ -27,7 +27,7 @@ chapter: false
 
 &emsp; **Internship Duration:** From 02/04/2026 to 02/08/2026
 
-![Your profile picture](/images/avatar.png)
+![Your profile picture](/images/avatar.jpeg)
 
 ### Report Content
 

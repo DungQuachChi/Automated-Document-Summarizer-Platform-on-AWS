@@ -16,14 +16,15 @@ Two things that run on their own once deployed: a scheduled Lambda that generate
 
 **Scheduling** (modules/scheduling):
 - IAM role scoped to exactly three actions: its own CloudWatch logs, dynamodb:Query against the table + summary-date-index GSI specifically, and s3:PutObject against the reports bucket.
-- aws_lambda_function — Python 3.12, 60s timeout, 256MB.
-- aws_cloudwatch_event_rule (cron(0 8 ? * MON *), ENABLED) + aws_cloudwatch_event_target + aws_lambda_permission — all three created together in one apply, so the schedule is never left unwired.
+- aws_lambda_function: Python 3.12, 60s timeout, 256MB.
+- aws_cloudwatch_event_rule (cron(0 8 ? * MON *), ENABLED) + aws_cloudwatch_event_target + aws_lambda_permission. All three created together in one apply, so the schedule is never left unwired.
 
 **Report Lambda logic**: queries summary-date-index for each of the last 7 days, aggregates by user_id, writes one CSV row per user. Env vars come from Terraform outputs, not hand-typed. No activity in the window → returns 200 with a "no data" message rather than an empty file.
 
 ```bash
 terraform apply
-aws lambda invoke --function-name $(terraform output -raw report_lambda_function_name) --payload '{}' response.json
+# the report Lambda is named <project_name>-report, so doc-summarizer-report with the default project_name
+aws lambda invoke --function-name doc-summarizer-report --payload '{}' response.json
 aws s3 ls s3://$(terraform output -raw reports_bucket_name)/reports/
 ```
 
@@ -40,7 +41,7 @@ This is the pipeline itself called Terraform (modules/pipeline). tfplan.binary g
 1. Bootstrap remote state - S3 bucket with versioning and DynamoDB lock table.
 2. There is a need for one-time manual authorization for the GitHub connection: **CodePipeline > Settings > Connections > Update pending connection**.
 
-**IAM:** Role of the CodePipeline is restricted by nature. The current role of the CodeBuild has AdministratorAccess attached — it is marked as known scope-down.
+**IAM:** Role of the CodePipeline is restricted by nature. The current role of the CodeBuild has AdministratorAccess attached, it is marked as known scope-down.
 ```bash
 cd terraform && terraform apply
 ```
@@ -51,7 +52,7 @@ Then push a small change to main and watch Source → Test → Approve → Apply
 | Error | Cause | Fix |
 |---|---|---|
 | EventBridge rule scheduled but Lambda never runs | aws_lambda_permission missing or removed outside Terraform | terraform plan should show no drift; apply to restore |
-| Reports never reach Glacier | Objects younger than 30 days, or lifecycle rule disabled | aws s3api get-bucket-lifecycle-configuration — confirm Enabled |
+| Reports never reach Glacier | Objects younger than 30 days, or lifecycle rule disabled | aws s3api get-bucket-lifecycle-configuration confirm Enabled |
 | Source stage fails immediately | CodeStar connection stuck at **Pending** | Complete the GitHub authorization handshake |
 | Test stage fails with a state lock error | Previous run didn't release the DynamoDB lock | terraform force-unlock LOCK_ID |
-| Apply stage fails mid-apply on a permissions error | CodeBuild role lacks a permission for a newly added resource type | Known gap under AdministratorAccess — see Section 5.6.2 |
+| Apply stage fails mid-apply on a permissions error | CodeBuild role lacks a permission for a newly added resource type | Known gap under AdministratorAccess (see Section 5.6.2) |

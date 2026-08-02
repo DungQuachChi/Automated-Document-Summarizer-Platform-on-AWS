@@ -18,7 +18,8 @@ pre: " <b> 4.x </b> "
 
 ### Diễn giả
 
-- *(bổ sung sau)*
+- **Nghia Tran** – Agentic SA
+- **Anh Pham** – Cloud Consultant, G-AsiaPacific Vietnam
 
 ### Điểm nổi bật
 

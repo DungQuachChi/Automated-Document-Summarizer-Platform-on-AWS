@@ -14,7 +14,7 @@ Không bao giờ sử dụng tài khoản root cho công việc hàng ngày. Tha
 ![overview](/images/5-Workshop/5.2-Prerequisite/IAM_console.jpeg)
 2. Ở menu bên trái, chọn **Users** → **Create user**.
 ![overview](/images/5-Workshop/5.2-Prerequisite/IAM_create_user.jpeg)
-3. User name: tên của bạn hoặc một định danh nhất quán, ví dụ phatnguyen. Tích chọn Provide user access to the AWS Management Console.
+3. User name: tên của bạn hoặc một định danh nhất quán, ví dụ workshop-admin. Tích chọn Provide user access to the AWS Management Console.
 ![overview](/images/5-Workshop/5.2-Prerequisite/IAM_name_and_check.jpeg)
 4. Nhấn **Next** rồi chọn **Attach policies directly** → tích chọn **AdministratorAccess**.
 ![overview](/images/5-Workshop/5.2-Prerequisite/IAM_attach.jpeg)
@@ -35,25 +35,25 @@ Không bao giờ sử dụng tài khoản root cho công việc hàng ngày. Tha
 ```bash
    aws --version
 ```
-3. Tạo access key cho người dùng IAM của bạn: console IAM → người dùng của bạn → 
+3. Tạo access key cho người dùng IAM của bạn: console IAM → người dùng của bạn  
 ![overview](/images/5-Workshop/5.2-Prerequisite/click_new_user.jpeg)
-4. Tab **Security credentials** → **Create access key** → 
+4. Tab **Security credentials** → **Create access key**  
 ![overview](/images/5-Workshop/5.2-Prerequisite/sercurity_crea.jpeg)
 ![overview](/images/5-Workshop/5.2-Prerequisite/access_key.jpeg)
 5. chọn **Command Line Interface (CLI)** → xác nhận → **Create access key**. 
 ![overview](/images/5-Workshop/5.2-Prerequisite/checked_CLI.jpeg)
 ![overview](/images/5-Workshop/5.2-Prerequisite/clickCreate_AccessKey.jpeg)
-6. Sao chép **Access Key ID** và **Secret Access Key** — secret chỉ hiển thị một lần duy nhất.
+6. Sao chép **Access Key ID** và **Secret Access Key**(secret chỉ hiển thị một lần duy nhất).
 ![overview](/images/5-Workshop/5.2-Prerequisite/download_key.jpeg)
 7. Cấu hình một profile có tên riêng (tránh dùng profile mặc định, để nhiều tài khoản/người dùng AWS không bị xung đột trên cùng một máy):
 ```bash
    aws configure --profile yourname
 ```
 8. Nhập:
-   - **AWS Access Key ID** — từ bước 3
-   - **AWS Secret Access Key** — từ bước 3
-   - **Default region** — \ap-southeast-1\
-   - **Default output format** — \json\
+   - **AWS Access Key ID**: Từ bước 3
+   - **AWS Secret Access Key**: Từ bước 3
+   - **Default region**: ap-southeast-1
+   - **Default output format**: json
 9. Kiểm tra profile đã hoạt động:
 ```bash
    aws sts get-caller-identity --profile yourname

@@ -1,44 +1,38 @@
 ---
-title: "Chia sẻ, đóng góp ý kiến"
-date: 2024-01-01
+title: "Chia Sẻ và Phản Hồi"
+date: 2026-08-02
 weight: 7
 chapter: false
 pre: " <b> 7. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
-
->Tại đây bạn có thể tự do đóng góp ý kiến cá nhân về những trải nghiệm khi tham gia chương trình First Cloud AI Journey, giúp team FCAJ cải thiện những vấn đề còn thiếu sót dựa trên các hạng mục sau:
-
-### Đánh giá chung
-
-**1. Môi trường làm việc**  
-Môi trường làm việc rất thân thiện và cởi mở. Các thành viên trong FCAJ luôn sẵn sàng hỗ trợ khi mình gặp khó khăn, kể cả ngoài giờ làm việc. Không gian làm việc gọn gàng, thoải mái, giúp mình tập trung tốt hơn. Tuy nhiên, mình nghĩ có thể bổ sung thêm một số buổi giao lưu hoặc team bonding để mọi người hiểu nhau hơn.
-
-**2. Sự hỗ trợ của mentor / team admin**  
-Mentor hướng dẫn rất chi tiết, giải thích rõ ràng khi mình chưa hiểu và luôn khuyến khích mình đặt câu hỏi. Team admin hỗ trợ các thủ tục, tài liệu và tạo điều kiện để mình làm việc thuận lợi. Mình đánh giá cao việc mentor cho phép mình thử và tự xử lý vấn đề thay vì chỉ đưa đáp án.
-
-**3. Sự phù hợp giữa công việc và chuyên ngành học**  
-Công việc mình được giao phù hợp với kiến thức mình đã học ở trường, đồng thời mở rộng thêm những mảng mới mà mình chưa từng được tiếp cận. Nhờ vậy, mình vừa củng cố kiến thức nền tảng, vừa học thêm kỹ năng thực tế.
-
-**4. Cơ hội học hỏi & phát triển kỹ năng**  
-Trong quá trình thực tập, mình học được nhiều kỹ năng mới như sử dụng công cụ quản lý dự án, kỹ năng làm việc nhóm, và cả cách giao tiếp chuyên nghiệp trong môi trường công ty. Mentor cũng chia sẻ nhiều kinh nghiệm thực tế giúp mình định hướng tốt hơn cho sự nghiệp.
-
-**5. Văn hóa & tinh thần đồng đội**  
-Văn hóa công ty rất tích cực: mọi người tôn trọng lẫn nhau, làm việc nghiêm túc nhưng vẫn vui vẻ. Khi có dự án gấp, mọi người cùng nhau cố gắng, hỗ trợ không phân biệt vị trí. Điều này giúp mình cảm thấy mình là một phần của tập thể, dù chỉ là thực tập sinh.
-
-**6. Chính sách / phúc lợi cho thực tập sinh**  
-Công ty có hỗ trợ phụ cấp thực tập và tạo điều kiện về thời gian linh hoạt khi cần thiết. Ngoài ra, việc được tham gia các buổi đào tạo nội bộ là một điểm cộng lớn.
 
 
-### Một số câu hỏi khác
-- Điều bạn **hài lòng nhất** trong thời gian thực tập?  
-- Điều bạn nghĩ công ty **cần cải thiện** cho các thực tập sinh sau?  
-- Nếu giới thiệu cho bạn bè, bạn có **khuyên họ thực tập ở đây không**? Vì sao?  
+### Đánh Giá Tổng Quan
 
+**1. Môi Trường Làm Việc**
+Môi trường làm việc rất thân thiện và cởi mở. Các thành viên FCAJ luôn sẵn lòng giúp đỡ mỗi khi tôi gặp khó khăn, kể cả ngoài giờ làm việc. Không gian làm việc gọn gàng, giúp tôi tập trung tốt hơn vào các bài lab và dự án.
 
-### Đề xuất & mong muốn
-- Bạn có đề xuất gì để cải thiện trải nghiệm trong kỳ thực tập?  
-- Bạn có muốn tiếp tục chương trình này trong tương lai?
-- Góp ý khác (tự do chia sẻ):
+**2. Sự Hỗ Trợ từ Mentor / Ban Điều Hành**
+Mentor của tôi luôn giải thích thấu đáo, rõ ràng mỗi khi tôi bối rối, và luôn khuyến khích tôi mạnh dạn đặt câu hỏi. Ban điều hành xử lý các công việc hành chính suôn sẻ, cung cấp các tài liệu cần thiết, và tạo điều kiện để tôi làm việc hiệu quả. Điều tôi trân trọng nhất là mentor cho phép tôi tự thử giải quyết vấn đề trước, thay vì chỉ đưa ra câu trả lời ngay.
+
+**3. Mức Độ Liên Quan của Công Việc với Chuyên Ngành**
+Các công việc được giao phù hợp tốt với kiến thức tôi đã học ở trường đại học, đồng thời cũng giúp tôi tiếp cận những lĩnh vực tôi chưa từng gặp trước đây. Điều này giúp tôi vừa củng cố nền tảng kiến thức, vừa có thêm kỹ năng thực tế.
+
+**4. Cơ Hội Học Hỏi & Phát Triển Kỹ Năng**
+Trong quá trình thực tập, tôi đã học được nhiều kỹ năng mới — sử dụng các công cụ quản lý dự án, kỹ năng làm việc nhóm, và giao tiếp chuyên nghiệp trong môi trường doanh nghiệp. Mentor cũng chia sẻ những kinh nghiệm thực tế quý giá, giúp tôi định hướng rõ ràng hơn cho con đường sự nghiệp của mình.
+
+**5. Văn Hóa Công Ty & Tinh Thần Đồng Đội**
+Văn hóa ở đây thực sự tích cực: mọi người tôn trọng lẫn nhau, làm việc nghiêm túc nhưng vẫn giữ được sự thoải mái, vui vẻ. Khi có dự án gấp, mọi người cùng nhau hỗ trợ bất kể vị trí của ai. Điều đó khiến tôi cảm thấy mình thực sự là một phần của đội ngũ, chứ không chỉ là một thực tập sinh đi ngang qua.
+
+**6. Chính Sách / Quyền Lợi Thực Tập**
+Công ty cung cấp trợ cấp thực tập cùng với thời gian làm việc linh hoạt khi cần thiết. Bên cạnh đó, việc được tham gia các buổi đào tạo nội bộ là một điểm cộng lớn.
+
+---
+
+### Câu Hỏi Bổ Sung
+- Điều gì khiến bạn **hài lòng nhất** trong quá trình thực tập?
+    - Việc tôi có thể gặp gỡ rất nhiều người thông minh, cùng chung đam mê và tầm nhìn với nhau.
+- Nếu giới thiệu cho một người bạn, bạn có **khuyên họ thực tập ở đây** không?
+    - Có, hoàn toàn có — tại sao lại không giới thiệu một nơi tuyệt vời để bản thân phát triển và kết nối với nhau. Tôi hy vọng ngày càng nhiều người biết đến chương trình này để nó phát triển hơn nữa.
+
+---

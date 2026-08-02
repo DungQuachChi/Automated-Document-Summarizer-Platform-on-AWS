@@ -37,7 +37,7 @@ pre : " <b> 5.3. </b> "
 
 #### Security and IAM Fundamentals
 
-**Least privilege — the Lambda execution role.** The Lambda function's IAM role grants only the specific actions it needs:
+**Least privilege the Lambda execution role.** The Lambda function's IAM role grants only the specific actions it needs:
 
 ```hcl
 resource "aws_iam_role_policy" "lambda_permissions" {
@@ -60,9 +60,9 @@ resource "aws_iam_role_policy" "lambda_permissions" {
 
 No dynamodb: wildcard, no bedrock: wildcard, no access to any other table or model. If this role's credentials were ever leaked, the blast radius is limited to writing/reading one DynamoDB table and invoking one Bedrock model.
 
-**IAM roles vs. users vs. hardcoded keys.** Lambda uses an IAM **role** — is being utilized by the Lambda function as it is being executed by temporary credentials granted at the time the function is invoked; there is no IAM users with long-lived access keys are used only for human CLI access (personal profile). Throughout the project, no values of AWS credentials were hard-coded into application code or committed to git.
+**IAM roles vs. users vs. hardcoded keys.** Lambda uses an IAM **role** is being utilized by the Lambda function as it is being executed by temporary credentials granted at the time the function is invoked; there is no IAM users with long-lived access keys are used only for human CLI access (personal profile). Throughout the project, no values of AWS credentials were hard-coded into application code or committed to git.
 
-**S3 buckets should not be accessible to the public.** The frontend bucket must not be publicly accessible. CloudFront accesses the bucket via the **Origin Access Control (OAC)** mechanism. Thus, the only way to access its contents is secure HTTPS protocol through CloudFront — direct URL access to S3 is disabled.
+**S3 buckets should not be accessible to the public.** The frontend bucket must not be publicly accessible. CloudFront accesses the bucket via the **Origin Access Control (OAC)** mechanism. Thus, the only way to access its contents is secure HTTPS protocol through CloudFront (direct URL access to S3 is disabled).
 
 **Cognito security trade-offs.** Advanced security features are enabled (compromised credential detection, risk-based sign-in). The Hosted UI is used instead of a custom-built login form, trading some UI customization for a maintained, security-patched auth flow.
 
@@ -77,7 +77,7 @@ Both are documented here explicitly, with a plan to close them in Section 6.2 (S
 #### Scalability
 
 Every compute choice in this architecture already scales to zero and back up automatically: Lambda scales per-request, DynamoDB on-demand billing scales with traffic, API Gateway and CloudFront handle traffic spikes natively. None of this requires manual intervention at the traffic levels this workshop targets.
-For real-scale production, the changes will have to be introduced — referred in the text as "unneeded now, here is what changes" and not as an action item for this workshop:
+Each of the following is deliberately out of scope at this scale rather than overlooked. They are the first changes to revisit as traffic grows, and the current design allows each to be added without restructuring what already exists:
 - **Provisioned concurrency** for the Lambda to remove cold-start latency during sustained high-load activities.
-- **API Gateway response caching** which has been skipped here for financial reasons (explained in Section 6.1) means reducing Bedrock calls for inputs repeated under higher load of traffic.
-- **Multi-region deployment** to help with the issues of latency and disaster recovery — this workshop does not require this due to operation in a single region (ap-southeast-1) with Bedrock calls redirected cross-region only for the sake of model availability.
+- **API Gateway response caching**, skipped here for cost reasons (explained in Section 6.1), would reduce Bedrock calls for inputs that repeat under heavier traffic.
+- **Multi-region deployment** to address latency and disaster recovery. This project runs in a single region (ap-southeast-1), with Bedrock calls routed cross-region only for model availability.

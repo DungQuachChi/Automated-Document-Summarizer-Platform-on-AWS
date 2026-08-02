@@ -97,19 +97,19 @@ resource "aws_s3_bucket_lifecycle_configuration" "reports" {
 
 ```
 
-- Chế độ tính phí PAY_PER_REQUEST: không tốn chi phí khi rảnh rỗi (idle), không cần lên kế hoạch dung lượng (capacity planning).
-- Mã hóa dữ liệu khi lưu trữ (encryption at rest), khôi phục theo thời điểm (point-in-time recovery).
+- Chế độ tính phí PAY_PER_REQUEST: không tốn chi phí khi idle, không cần lên kế hoạch dung lượng.
+- Mã hóa dữ liệu khi lưu trữ, khôi phục theo thời điểm.
 - GSI trên summary_date: cần thiết để hàm Lambda báo cáo hàng tuần có thể truy vấn "tất cả các bản tóm tắt trong 7 ngày gần nhất trên toàn bộ người dùng", điều mà partition key user_id của bảng gốc không thể xử lý hiệu quả một mình.
 
 #### IAM Role cho Lambda
 
-Log group được tạo thủ công (aws_cloudwatch_log_group, giữ log trong 7 ngày) trước khi hàm Lambda thực sự bắt đầu thực thi, thay vì sử dụng log group được Lambda tự động tạo mà không có thời hạn hết hạn. Timeout được đặt là 30 giây, vì các lệnh gọi Bedrock cùng với việc thử lại (retry) cũng cần thêm thời gian ngoài mức mặc định 3 giây.
+Log group được tạo thủ công (aws_cloudwatch_log_group, giữ log trong 7 ngày) trước khi hàm Lambda thực sự bắt đầu thực thi, thay vì sử dụng log group được Lambda tự động tạo mà không có thời hạn hết hạn. Timeout được đặt là 30 giây, vì các lệnh gọi Bedrock cùng với việc thử lại cũng cần thêm thời gian ngoài mức mặc định 3 giây.
 
 Nếu request không cung cấp bất kỳ claim nào từ Cognito, user_id sẽ được gán một giá trị hard-code sẵn, hữu ích cho việc kiểm thử thủ công/cục bộ (local/manual testing) và phải được xóa bỏ trước khi triển khai ứng dụng ở môi trường production.
 
 #### Hàm Lambda
 
-Log group được tạo thủ công (aws_cloudwatch_log_group, giữ log trong 7 ngày) và cần được tạo trước khi hàm được gọi, thay vì phụ thuộc vào log group tự động tạo không có thời hạn hết hạn. Thời gian timeout được đặt là 30 giây vì các lệnh gọi Bedrock cùng với thời gian chờ giữa các lần retry (retry backoff) cần nhiều thời gian hơn mức mặc định 3 giây.
+Log group được tạo thủ công (aws_cloudwatch_log_group, giữ log trong 7 ngày) và cần được tạo trước khi hàm được gọi, thay vì phụ thuộc vào log group tự động tạo không có thời hạn hết hạn. Thời gian timeout được đặt là 30 giây vì các lệnh gọi Bedrock cùng với thời gian chờ giữa các lần retry cần nhiều thời gian hơn mức mặc định 3 giây.
 
 Nếu request không chứa bất kỳ claim nào từ Cognito, user_id sẽ được đặt thành một giá trị test cụ thể. Tính năng này được dùng cho việc kiểm thử thủ công/cục bộ và cần được loại bỏ trước khi triển khai lên môi trường production thực tế.
 
@@ -130,7 +130,7 @@ aws lambda invoke \
 cat response.json
 ```
 
-**Cách kiểm tra:** file response.json hiển thị "statusCode": 200 kèm theo các trường summary, timestamp và summary_date. Nếu gặp lỗi 502 tại bước này nghĩa là quyền truy cập model Bedrock chưa được cấp — xem thêm ở Mục 5.4.2.
+**Cách kiểm tra:** file response.json hiển thị "statusCode": 200 kèm theo các trường summary, timestamp và summary_date. Nếu gặp lỗi 502 tại bước này nghĩa là quyền truy cập model Bedrock chưa được cấp (xem thêm ở Mục 5.4.2).
 
 #### Các lỗi thường gặp và cách khắc phục
 

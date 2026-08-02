@@ -1,115 +1,98 @@
 ---
-title: "Proposal"
-date: 2024-01-01
+title: "Proposal: Automated Serverless Document Summarizer Platform on AWS"
+date: 2026-08-02
 weight: 2
 chapter: false
 pre: " <b> 2. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
 
-In this section, you need to summarize the contents of the workshop that you **plan** to conduct.
+# Proposal: Automated Serverless Document Summarizer Platform on AWS
 
-# IoT Weather Platform for Lab Research
-## A Unified AWS Serverless Solution for Real-Time Weather Monitoring
+## 1. Project Overview
 
-### 1. Executive Summary
-The IoT Weather Platform is designed for the ITea Lab team in Ho Chi Minh City to enhance weather data collection and analysis. It supports up to 5 weather stations, with potential scalability to 10-15, utilizing Raspberry Pi edge devices with ESP32 sensors to transmit data via MQTT. The platform leverages AWS Serverless services to deliver real-time monitoring, predictive analytics, and cost efficiency, with access restricted to 5 lab members via Amazon Cognito.
+This project builds a production-grade, fully serverless document summarization platform on AWS, developed by a two-person team. Authenticated users submit a block of text through a REST API (or a simple web page) and receive an AI-generated summary powered by Amazon Bedrock. Every summarization is stored per user, browsable through a history endpoint, and aggregated into a weekly CSV usage report generated automatically on a schedule.
 
-### 2. Problem Statement
-### What’s the Problem?
-Current weather stations require manual data collection, becoming unmanageable with multiple units. There is no centralized system for real-time data or analytics, and third-party platforms are costly and overly complex.
+Beyond the application itself, the project's core purpose is to practice modern cloud engineering end-to-end: the entire infrastructure is defined as code with Terraform, deployed through an automated CI/CD pipeline with security scanning, monitored with dashboards and alarms, and hardened against the CIS AWS Foundations Benchmark — all within a strict student budget.
 
-### The Solution
-The platform uses AWS IoT Core to ingest MQTT data, AWS Lambda and API Gateway for processing, Amazon S3 for storage (including a data lake), and AWS Glue Crawlers and ETL jobs to extract, transform, and load data from the S3 data lake to another S3 bucket for analysis. AWS Amplify with Next.js provides the web interface, and Amazon Cognito ensures secure access. Similar to Thingsboard and CoreIoT, users can register new devices and manage connections, though this platform operates on a smaller scale and is designed for private use. Key features include real-time dashboards, trend analysis, and low operational costs.
+**Team split:** one member owns the backend, Bedrock integration, and all infrastructure/CI-CD; the other owns the frontend styling, the weekly report business logic, and load testing.
 
-### Benefits and Return on Investment
-The solution establishes a foundational resource for lab members to develop a larger IoT platform, serving as a study resource, and provides a data foundation for AI enthusiasts for model training or analysis. It reduces manual reporting for each station via a centralized platform, simplifying management and maintenance, and improves data reliability. Monthly costs are $0.66 USD per the AWS Pricing Calculator, with a 12-month total of $7.92 USD. All IoT equipment costs are covered by the existing weather station setup, eliminating additional development expenses. The break-even period of 6-12 months is achieved through significant time savings from reduced manual work.
+## 2. Objectives
 
-### 3. Solution Architecture
-The platform employs a serverless AWS architecture to manage data from 5 Raspberry Pi-based stations, scalable to 15. Data is ingested via AWS IoT Core, stored in an S3 data lake, and processed by AWS Glue Crawlers and ETL jobs to transform and load it into another S3 bucket for analysis. Lambda and API Gateway handle additional processing, while Amplify with Next.js hosts the dashboard, secured by Cognito. The architecture is detailed below:
+- **Serverless compute:** AWS Lambda (Python) invoking Amazon Bedrock (Amazon Nova Lite) for text summarization. Synchronous calls, input up to 5,000 characters.
+- **Authentication:** Amazon Cognito with OAuth 2.0 (Hosted UI login page, JWT tokens) protecting every API route.
+- **API management:** Amazon API Gateway (REST) with a Cognito authorizer, an API key, and a usage plan enforcing rate and monthly-quota limits.
+- **Data persistence:** Amazon DynamoDB single-table design (user_id partition key, timestamp sort key) with a GSI for date-based report queries.
+- **Scheduled reporting:** Amazon EventBridge cron triggering a report Lambda weekly, writing per-user CSV summaries to S3 with a Glacier lifecycle policy.
+- **CI/CD:** AWS CodePipeline + CodeBuild: pytest unit tests, bandit and tfsec security scans, terraform plan, manual approval, then terraform apply.
+- **Infrastructure as Code:** modular Terraform (auth, api, compute, data, scheduling, frontend, monitoring, pipeline modules) with remote state on S3 and DynamoDB state locking.
+- **Observability:** CloudWatch dashboard (Lambda duration and Bedrock latency at p50/p95/p99, API errors, DynamoDB usage) with SNS email alarms.
+- **Security & compliance:** least-privilege IAM, multi-region CloudTrail, AWS Config with the CIS AWS Foundations Benchmark conformance pack.
+- **Demo frontend:** static HTML/JS site on S3 behind CloudFront, logging in via the Cognito Hosted UI and calling the API with the JWT.
 
-![IoT Weather Station Architecture](/images/2-Proposal/edge_architecture.jpeg)
+## 3. Problem Statement
 
-![IoT Weather Platform Architecture](/images/2-Proposal/platform_architecture.jpeg)
+Deploying AI-based applications by hand is fragile: manual console configuration causes environment drift, undocumented dependencies, and setups that cannot be reproduced or reviewed. Calling generative-AI APIs in production raises further problems that a simple script ignores — authentication and per-user identity, abuse prevention and rate limiting, transient model errors and quota limits, cost visibility, and auditability.
 
-### AWS Services Used
-- **AWS IoT Core**: Ingests MQTT data from 5 stations, scalable to 15.
-- **AWS Lambda**: Processes data and triggers Glue jobs (two functions).
-- **Amazon API Gateway**: Facilitates web app communication.
-- **Amazon S3**: Stores raw data in a data lake and processed outputs (two buckets).
-- **AWS Glue**: Crawlers catalog data, and ETL jobs transform and load it.
-- **AWS Amplify**: Hosts the Next.js web interface.
-- **Amazon Cognito**: Secures access for lab users.
+This project addresses those problems with a fully serverless, reproducible architecture: every resource is version-controlled Terraform, every deployment passes automated tests and security scans, every request is authenticated and rate-limited, and the AI call path is defensive (retries with exponential backoff, fast failure on quota exhaustion). For a student team, it also answers a practical question: can a production-grade GenAI backend be run on a budget of tens of dollars per month?
 
-### Component Design
-- **Edge Devices**: Raspberry Pi collects and filters sensor data, sending it to IoT Core.
-- **Data Ingestion**: AWS IoT Core receives MQTT messages from the edge devices.
-- **Data Storage**: Raw data is stored in an S3 data lake; processed data is stored in another S3 bucket.
-- **Data Processing**: AWS Glue Crawlers catalog the data, and ETL jobs transform it for analysis.
-- **Web Interface**: AWS Amplify hosts a Next.js app for real-time dashboards and analytics.
-- **User Management**: Amazon Cognito manages user access, allowing up to 5 active accounts.
+## 4. Solution Architecture
 
-### 4. Technical Implementation
-**Implementation Phases**
-This project has two parts—setting up weather edge stations and building the weather platform—each following 4 phases:
-- Build Theory and Draw Architecture: Research Raspberry Pi setup with ESP32 sensors and design the AWS serverless architecture (1 month pre-internship)
-- Calculate Price and Check Practicality: Use AWS Pricing Calculator to estimate costs and adjust if needed (Month 1).
-- Fix Architecture for Cost or Solution Fit: Tweak the design (e.g., optimize Lambda with Next.js) to stay cost-effective and usable (Month 2).
-- Develop, Test, and Deploy: Code the Raspberry Pi setup, AWS services with CDK/SDK, and Next.js app, then test and release to production (Months 2-3).
+**Request flow:** the user signs in through the Cognito Hosted UI and is redirected back with a JWT. The frontend calls POST /summarize or GET /history on API Gateway with the token; the Cognito authorizer validates it and the usage plan applies rate limiting before the Lambda runs. The summarizer Lambda invokes Amazon Nova Lite on Bedrock, stores the input text and summary in DynamoDB keyed by the user's identity, and returns the summary. Weekly, EventBridge triggers a second Lambda that aggregates the past week's activity from DynamoDB into a CSV report in S3.
 
-**Technical Requirements**
-- Weather Edge Station: Sensors (temperature, humidity, rainfall, wind speed), a microcontroller (ESP32), and a Raspberry Pi as the edge device. Raspberry Pi runs Raspbian, handles Docker for filtering, and sends 1 MB/day per station via MQTT over Wi-Fi.
-- Weather Platform: Practical knowledge of AWS Amplify (hosting Next.js), Lambda (minimal use due to Next.js), AWS Glue (ETL), S3 (two buckets), IoT Core (gateway and rules), and Cognito (5 users). Use AWS CDK/SDK to code interactions (e.g., IoT Core rules to S3). Next.js reduces Lambda workload for the fullstack web app.
+**Architectural layers:**
 
-### 5. Timeline & Milestones
-**Project Timeline**
-- Pre-Internship (Month 0): 1 month for planning and old station review.
-- Internship (Months 1-3): 3 months.
-    - Month 1: Study AWS and upgrade hardware.
-    - Month 2: Design and adjust architecture.
-    - Month 3: Implement, test, and launch.
-- Post-Launch: Up to 1 year for research.
+| Layer | Services |
+|---|---|
+| User / Edge | Static HTML/JS on S3 + CloudFront (HTTPS) |
+| API | API Gateway REST API, Cognito authorizer, usage plan + API key, CORS |
+| Compute | Two Lambda functions (Python): synchronous summarizer, scheduled weekly reporter |
+| AI | Amazon Bedrock — Amazon Nova Lite |
+| Data | DynamoDB (single table + GSI), S3 reports bucket (AES-256, Glacier lifecycle) |
+| Scheduling | EventBridge weekly cron rule |
+| DevOps | CodePipeline + CodeBuild (pytest, bandit, tfsec, plan/approve/apply), Terraform remote state (S3 + DynamoDB lock) |
+| Security & Observability | CloudTrail (multi-region), AWS Config + CIS conformance pack, CloudWatch dashboard + alarms, SNS |
 
-### 6. Budget Estimation
-You can find the budget estimation on the [AWS Pricing Calculator](https://calculator.aws/#/estimate?id=621f38b12a1ef026842ba2ddfe46ff936ed4ab01).  
-Or you can download the [Budget Estimation File](../attachments/budget_estimation.pdf).
+**Primary region:** ap-southeast-1 (Singapore).
 
-### Infrastructure Costs
-- AWS Services:
-    - AWS Lambda: $0.00/month (1,000 requests, 512 MB storage).
-    - S3 Standard: $0.15/month (6 GB, 2,100 requests, 1 GB scanned).
-    - Data Transfer: $0.02/month (1 GB inbound, 1 GB outbound).
-    - AWS Amplify: $0.35/month (256 MB, 500 ms requests).
-    - Amazon API Gateway: $0.01/month (2,000 requests).
-    - AWS Glue ETL Jobs: $0.02/month (2 DPUs).
-    - AWS Glue Crawlers: $0.07/month (1 crawler).
-    - MQTT (IoT Core): $0.08/month (5 devices, 45,000 messages).
+## 5. Timeline
 
-Total: $0.7/month, $8.40/12 months
+12-week internship period, April – July 2026:
 
-- Hardware: $265 one-time (Raspberry Pi 5 and sensors).
+| Weeks | Phase |
+|---|---|
+| 1–5 | AWS foundations study: networking, IAM, compute, storage, DNS, containers |
+| 6 | Project kickoff: proposal, architecture design, model selection, work split |
+| 7 | Environment setup: AWS CLI, Terraform, shared repository, service research |
+| 8 | Core backend: Bedrock integration, response parsing, DynamoDB persistence, retries, unit tests |
+| 9 | Auth & API layer: Cognito User Pool + Hosted UI, API Gateway routes, authorizer, usage plan, CORS |
+| 10 | Infrastructure as Code: modular Terraform, remote state with locking |
+| 11 | CI/CD pipeline + observability: CodePipeline, buildspec automation, custom metrics, dashboard, alarms |
+| 12 | Hardening & delivery: CIS benchmark, load testing, frontend deployment on CloudFront, cleanup, documentation |
 
-### 7. Risk Assessment
-#### Risk Matrix
-- Network Outages: Medium impact, medium probability.
-- Sensor Failures: High impact, low probability.
-- Cost Overruns: Medium impact, low probability.
+## 6. Budget
 
-#### Mitigation Strategies
-- Network: Local storage on Raspberry Pi with Docker.
-- Sensors: Regular checks and spares.
-- Cost: AWS budget alerts and optimization.
+Hard ceiling: $50/month across all AWS services. Design decisions follow from it: on-demand DynamoDB instead of provisioned capacity, no NAT gateways or VPC endpoints, smallest viable Lambda memory, and API Gateway response caching explicitly skipped (the smallest cache cluster alone costs ~$14–19/month).
 
-#### Contingency Plans
-- Revert to manual methods if AWS fails.
-- Use CloudFormation for cost-related rollbacks.
+Rough monthly estimate at expected traffic (low thousands of requests):
 
-### 8. Expected Outcomes
-#### Technical Improvements: 
-Real-time data and analytics replace manual processes.  
-Scalable to 10-15 stations.
-#### Long-term Value
-1-year data foundation for AI research.  
-Reusable for future projects.
+| Item | Est. cost/month |
+|---|---|
+| Lambda (both functions) | ~$0 (free tier) |
+| DynamoDB on-demand + PITR | < $1 |
+| API Gateway REST | < $1 |
+| Bedrock — Nova Lite tokens | ~$1 |
+| S3 + CloudFront (static site + reports) | < $1 |
+| CodePipeline + CodeBuild minutes | ~$2 |
+| CloudTrail (first trail) + AWS Config recorder & rules | ~$3–5 |
+| CloudWatch alarms/metrics, SNS | ~$1 |
+| **Total** | **≈ $8–12 / month — well under the $50 ceiling** |
+
+## 7. Risks
+
+| Risk | Impact | Probability | Mitigation |
+|---|---|---|---|
+| Bedrock model access / on-demand quota limits on a new AWS account | High | Medium | Request quota early via AWS Support; keep a mock summarize path so development, testing, and the demo are never blocked by the model quota |
+| Cost overrun on a student budget | Medium | Medium | Free-tier-first defaults, on-demand billing, budget alerts, avoid always-on resources; check every change against the $50 ceiling |
+| Two people breaking shared infrastructure (state conflicts, Cognito/CORS config) | Medium | Medium | Terraform remote state with DynamoDB locking, branch protection with PR review, coordinate before changing shared resources |
+| Security misconfiguration (over-broad IAM, public buckets) | High | Low | tfsec + bandit gates in the pipeline, least-privilege IAM, CIS conformance pack, CloudTrail audit |
+| Model/region availability (chosen model not served in the home region) | Medium | Low | Use cross-region inference profiles; keep the model ID configurable via environment variable |

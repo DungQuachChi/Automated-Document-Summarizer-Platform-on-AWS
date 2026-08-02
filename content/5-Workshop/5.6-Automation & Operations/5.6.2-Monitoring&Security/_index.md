@@ -17,7 +17,7 @@ src/lambda_fn/lambda_function.py publishes to Custom/Bedrock around every model 
 #### Alarms (modules/monitoring)
 
 One SNS topic + email subscription, two alarms:
-- API Gateway 5xx **rate** (metric-math errors/requests*100) > 5% over 5 minutes — rate, not raw count.
+- API Gateway 5xx **rate** (metric-math errors/requests*100) > 5% over 5 minutes (rate, not raw count).
 - Any Custom/Bedrock/BedrockErrors data point at all (threshold = 0).
 
 ```bash
@@ -27,7 +27,7 @@ aws cloudwatch put-metric-data --namespace Custom/Bedrock --metric-name BedrockE
 
 #### Dashboard
 
-One aws_cloudwatch_dashboard resource, six widgets — Lambda invocations/errors/duration percentiles, Bedrock latency/success/error, API Gateway traffic/4xx/5xx, DynamoDB capacity/throttles. Dimensions passed in as module variables from root main.tf.
+One aws_cloudwatch_dashboard resource, six widgets, Lambda invocations/errors/duration percentiles, Bedrock latency/success/error, API Gateway traffic/4xx/5xx, DynamoDB capacity/throttles. Dimensions passed in as module variables from root main.tf.
 
 #### CloudTrail & AWS Config (modules/security)
 
@@ -38,7 +38,7 @@ One aws_cloudwatch_dashboard resource, six widgets — Lambda invocations/errors
 - CodeBuild's IAM role uses AdministratorAccess.
 - MFA isn't enforced account-wide via IAM policy.
 
-Both are revisited in Section 6.2 (Simple Security Hardening) — the point of running Config here is an accurate picture, not a clean scorecard.
+Both are revisited in Section 6.2 (Simple Security Hardening). The point of running Config here is an accurate picture, not a clean scorecard.
 
 #### Common Errors and Fixes
 

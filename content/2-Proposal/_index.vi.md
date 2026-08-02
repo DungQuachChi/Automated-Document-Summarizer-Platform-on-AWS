@@ -1,108 +1,99 @@
 ---
-title: "Bản đề xuất"
-date: 2024-01-01
+title: "Đề Xuất: Nền Tảng Tóm Tắt Tài Liệu Serverless Tự Động Trên AWS"
+date: 2026-08-02
 weight: 2
 chapter: false
 pre: " <b> 2. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
 
-Tại phần này, bạn cần tóm tắt các nội dung trong workshop mà bạn **dự tính** sẽ làm.
 
-# IoT Weather Platform for Lab Research  
-## Giải pháp AWS Serverless hợp nhất cho giám sát thời tiết thời gian thực  
+# Đề Xuất: Nền Tảng Tóm Tắt Tài Liệu Serverless Tự Động Trên AWS
 
-### 1. Tóm tắt điều hành  
-IoT Weather Platform được thiết kế dành cho nhóm *ITea Lab* tại TP. Hồ Chí Minh nhằm nâng cao khả năng thu thập và phân tích dữ liệu thời tiết. Nền tảng hỗ trợ tối đa 5 trạm thời tiết, có khả năng mở rộng lên 10–15 trạm, sử dụng thiết bị biên Raspberry Pi kết hợp cảm biến ESP32 để truyền dữ liệu qua MQTT. Nền tảng tận dụng các dịch vụ AWS Serverless để cung cấp giám sát thời gian thực, phân tích dự đoán và tiết kiệm chi phí, với quyền truy cập giới hạn cho 5 thành viên phòng lab thông qua Amazon Cognito.  
+## 1. Tổng Quan Dự Án
 
-### 2. Tuyên bố vấn đề  
-*Vấn đề hiện tại*  
-Các trạm thời tiết hiện tại yêu cầu thu thập dữ liệu thủ công, khó quản lý khi có nhiều trạm. Không có hệ thống tập trung cho dữ liệu hoặc phân tích thời gian thực, và các nền tảng bên thứ ba thường tốn kém và quá phức tạp.  
+Dự án này xây dựng một nền tảng tóm tắt tài liệu hoàn toàn serverless, ở mức sẵn sàng sản xuất (production-grade) trên AWS, được phát triển bởi một nhóm gồm hai người. Người dùng đã xác thực gửi một đoạn văn bản thông qua REST API (hoặc một trang web đơn giản) và nhận về bản tóm tắt do AI tạo ra, được hỗ trợ bởi Amazon Bedrock. Mỗi bản tóm tắt được lưu trữ theo từng người dùng, có thể duyệt qua endpoint lịch sử, và được tổng hợp thành báo cáo sử dụng CSV hàng tuần được tạo tự động theo lịch.
 
-*Giải pháp*  
-Nền tảng sử dụng AWS IoT Core để tiếp nhận dữ liệu MQTT, AWS Lambda và API Gateway để xử lý, Amazon S3 để lưu trữ (bao gồm data lake), và AWS Glue Crawlers cùng các tác vụ ETL để trích xuất, chuyển đổi, tải dữ liệu từ S3 data lake sang một S3 bucket khác để phân tích. AWS Amplify với Next.js cung cấp giao diện web, và Amazon Cognito đảm bảo quyền truy cập an toàn. Tương tự như Thingsboard và CoreIoT, người dùng có thể đăng ký thiết bị mới và quản lý kết nối, nhưng nền tảng này hoạt động ở quy mô nhỏ hơn và phục vụ mục đích sử dụng nội bộ. Các tính năng chính bao gồm bảng điều khiển thời gian thực, phân tích xu hướng và chi phí vận hành thấp.  
+Ngoài bản thân ứng dụng, mục đích cốt lõi của dự án là thực hành kỹ thuật cloud hiện đại từ đầu đến cuối: toàn bộ hạ tầng được định nghĩa dưới dạng code bằng Terraform, được triển khai thông qua pipeline CI/CD tự động kèm quét bảo mật, được giám sát bằng dashboard và alarm, và được tăng cường bảo mật theo CIS AWS Foundations Benchmark — tất cả trong giới hạn ngân sách chặt chẽ của sinh viên.
 
-*Lợi ích và hoàn vốn đầu tư (ROI)*  
-Giải pháp tạo nền tảng cơ bản để các thành viên phòng lab phát triển một nền tảng IoT lớn hơn, đồng thời cung cấp nguồn dữ liệu cho những người nghiên cứu AI phục vụ huấn luyện mô hình hoặc phân tích. Nền tảng giảm bớt báo cáo thủ công cho từng trạm thông qua hệ thống tập trung, đơn giản hóa quản lý và bảo trì, đồng thời cải thiện độ tin cậy dữ liệu. Chi phí hàng tháng ước tính 0,66 USD (theo AWS Pricing Calculator), tổng cộng 7,92 USD cho 12 tháng. Tất cả thiết bị IoT đã được trang bị từ hệ thống trạm thời tiết hiện tại, không phát sinh chi phí phát triển thêm. Thời gian hoàn vốn 6–12 tháng nhờ tiết kiệm đáng kể thời gian thao tác thủ công.  
+**Phân chia nhóm:** một thành viên phụ trách backend, tích hợp Bedrock, và toàn bộ hạ tầng/CI-CD; người còn lại phụ trách giao diện frontend, logic nghiệp vụ báo cáo hàng tuần, và kiểm thử tải.
 
-### 3. Kiến trúc giải pháp  
-Nền tảng áp dụng kiến trúc AWS Serverless để quản lý dữ liệu từ 5 trạm dựa trên Raspberry Pi, có thể mở rộng lên 15 trạm. Dữ liệu được tiếp nhận qua AWS IoT Core, lưu trữ trong S3 data lake và xử lý bởi AWS Glue Crawlers và ETL jobs để chuyển đổi và tải vào một S3 bucket khác cho mục đích phân tích. Lambda và API Gateway xử lý bổ sung, trong khi Amplify với Next.js cung cấp bảng điều khiển được bảo mật bởi Cognito.  
+## 2. Mục Tiêu
 
-![IoT Weather Station Architecture](/images/2-Proposal/edge_architecture.jpeg)
+- **Compute serverless:** AWS Lambda (Python) gọi Amazon Bedrock (Amazon Nova Lite) để tóm tắt văn bản. Các lệnh gọi đồng bộ, đầu vào lên đến 5.000 ký tự.
+- **Xác thực:** Amazon Cognito với OAuth 2.0 (trang đăng nhập Hosted UI, JWT token) bảo vệ mọi route API.
+- **Quản lý API:** Amazon API Gateway (REST) với Cognito authorizer, một API key, và một usage plan áp đặt giới hạn tốc độ và hạn mức hàng tháng.
+- **Lưu trữ dữ liệu:** Thiết kế single-table trên Amazon DynamoDB (partition key user_id, sort key timestamp) với một GSI cho các truy vấn báo cáo theo ngày.
+- **Báo cáo định kỳ:** Amazon EventBridge cron kích hoạt một Lambda báo cáo hàng tuần, ghi các bản tóm tắt CSV theo từng người dùng vào S3 kèm lifecycle policy chuyển sang Glacier.
+- **CI/CD:** AWS CodePipeline + CodeBuild: unit test bằng pytest, quét bảo mật bằng bandit và tfsec, terraform plan, phê duyệt thủ công, sau đó terraform apply.
+- **Infrastructure as Code:** Terraform theo module (các module auth, api, compute, data, scheduling, frontend, monitoring, pipeline) với remote state trên S3 và khóa state bằng DynamoDB.
+- **Khả năng quan sát:** Dashboard CloudWatch (thời gian thực thi Lambda và độ trễ Bedrock ở p50/p95/p99, lỗi API, mức sử dụng DynamoDB) kèm alarm email qua SNS.
+- **Bảo mật & tuân thủ:** IAM theo nguyên tắc least-privilege, CloudTrail đa vùng, AWS Config kèm conformance pack CIS AWS Foundations Benchmark.
+- **Demo frontend:** trang HTML/JS tĩnh trên S3 phía sau CloudFront, đăng nhập qua Cognito Hosted UI và gọi API bằng JWT.
 
-![IoT Weather Platform Architecture](/images/2-Proposal/platform_architecture.jpeg)
+## 3. Phát Biểu Vấn Đề
 
-*Dịch vụ AWS sử dụng*  
-- *AWS IoT Core*: Tiếp nhận dữ liệu MQTT từ 5 trạm, mở rộng lên 15.  
-- *AWS Lambda*: Xử lý dữ liệu và kích hoạt Glue jobs (2 hàm).  
-- *Amazon API Gateway*: Giao tiếp với ứng dụng web.  
-- *Amazon S3*: Lưu trữ dữ liệu thô (data lake) và dữ liệu đã xử lý (2 bucket).  
-- *AWS Glue*: Crawlers lập chỉ mục dữ liệu, ETL jobs chuyển đổi và tải dữ liệu.  
-- *AWS Amplify*: Lưu trữ giao diện web Next.js.  
-- *Amazon Cognito*: Quản lý quyền truy cập cho người dùng phòng lab.  
+Triển khai các ứng dụng dựa trên AI một cách thủ công rất dễ gãy: việc cấu hình console thủ công gây ra hiện tượng lệch môi trường (environment drift), các dependency không được tài liệu hóa, và các thiết lập không thể tái lập hay rà soát được. Việc gọi các API generative-AI trong production còn đặt ra thêm các vấn đề mà một script đơn giản thường bỏ qua — xác thực và định danh theo từng người dùng, phòng chống lạm dụng và giới hạn tốc độ, lỗi tạm thời của model và giới hạn hạn mức, khả năng quan sát chi phí, và khả năng kiểm toán.
 
-*Thiết kế thành phần*  
-- *Thiết bị biên*: Raspberry Pi thu thập và lọc dữ liệu cảm biến, gửi tới IoT Core.  
-- *Tiếp nhận dữ liệu*: AWS IoT Core nhận tin nhắn MQTT từ thiết bị biên.  
-- *Lưu trữ dữ liệu*: Dữ liệu thô lưu trong S3 data lake; dữ liệu đã xử lý lưu ở một S3 bucket khác.  
-- *Xử lý dữ liệu*: AWS Glue Crawlers lập chỉ mục dữ liệu; ETL jobs chuyển đổi để phân tích.  
-- *Giao diện web*: AWS Amplify lưu trữ ứng dụng Next.js cho bảng điều khiển và phân tích thời gian thực.  
-- *Quản lý người dùng*: Amazon Cognito giới hạn 5 tài khoản hoạt động.  
+Dự án này giải quyết những vấn đề đó bằng một kiến trúc hoàn toàn serverless, có thể tái lập: mọi tài nguyên đều được quản lý phiên bản bằng Terraform, mọi lần triển khai đều vượt qua các bài kiểm thử tự động và quét bảo mật, mọi request đều được xác thực và giới hạn tốc độ, và luồng gọi AI có tính phòng thủ (retry với exponential backoff, thất bại nhanh khi hết hạn mức). Đối với một nhóm sinh viên, dự án cũng trả lời một câu hỏi thực tế: liệu một backend GenAI ở mức production có thể vận hành với ngân sách vài chục đô-la mỗi tháng hay không?
 
-### 4. Triển khai kỹ thuật  
-*Các giai đoạn triển khai*  
-Dự án gồm 2 phần — thiết lập trạm thời tiết biên và xây dựng nền tảng thời tiết — mỗi phần trải qua 4 giai đoạn:  
-1. *Nghiên cứu và vẽ kiến trúc*: Nghiên cứu Raspberry Pi với cảm biến ESP32 và thiết kế kiến trúc AWS Serverless (1 tháng trước kỳ thực tập).  
-2. *Tính toán chi phí và kiểm tra tính khả thi*: Sử dụng AWS Pricing Calculator để ước tính và điều chỉnh (Tháng 1).  
-3. *Điều chỉnh kiến trúc để tối ưu chi phí/giải pháp*: Tinh chỉnh (ví dụ tối ưu Lambda với Next.js) để đảm bảo hiệu quả (Tháng 2).  
-4. *Phát triển, kiểm thử, triển khai*: Lập trình Raspberry Pi, AWS services với CDK/SDK và ứng dụng Next.js, sau đó kiểm thử và đưa vào vận hành (Tháng 2–3).  
+## 4. Kiến Trúc Giải Pháp
 
-*Yêu cầu kỹ thuật*  
-- *Trạm thời tiết biên*: Cảm biến (nhiệt độ, độ ẩm, lượng mưa, tốc độ gió), vi điều khiển ESP32, Raspberry Pi làm thiết bị biên. Raspberry Pi chạy Raspbian, sử dụng Docker để lọc dữ liệu và gửi 1 MB/ngày/trạm qua MQTT qua Wi-Fi.  
-- *Nền tảng thời tiết*: Kiến thức thực tế về AWS Amplify (lưu trữ Next.js), Lambda (giảm thiểu do Next.js xử lý), AWS Glue (ETL), S3 (2 bucket), IoT Core (gateway và rules), và Cognito (5 người dùng). Sử dụng AWS CDK/SDK để lập trình (ví dụ IoT Core rules tới S3). Next.js giúp giảm tải Lambda cho ứng dụng web fullstack.  
+**Luồng request:** người dùng đăng nhập qua Cognito Hosted UI và được chuyển hướng trở lại kèm JWT. Frontend gọi POST /summarize hoặc GET /history đến API Gateway kèm token; Cognito authorizer xác thực token và usage plan áp dụng giới hạn tốc độ trước khi Lambda chạy. Lambda tóm tắt gọi Amazon Nova Lite trên Bedrock, lưu văn bản đầu vào và bản tóm tắt vào DynamoDB theo khóa danh tính người dùng, và trả về bản tóm tắt. Hàng tuần, EventBridge kích hoạt một Lambda thứ hai tổng hợp hoạt động của tuần vừa qua từ DynamoDB thành một báo cáo CSV trong S3.
 
-### 5. Lộ trình & Mốc triển khai  
-- *Trước thực tập (Tháng 0)*: 1 tháng lên kế hoạch và đánh giá trạm cũ.  
-- *Thực tập (Tháng 1–3)*:  
-    - Tháng 1: Học AWS và nâng cấp phần cứng.  
-    - Tháng 2: Thiết kế và điều chỉnh kiến trúc.  
-    - Tháng 3: Triển khai, kiểm thử, đưa vào sử dụng.  
-- *Sau triển khai*: Nghiên cứu thêm trong vòng 1 năm.  
+**Các lớp kiến trúc:**
 
-### 6. Ước tính ngân sách  
-Có thể xem chi phí trên [AWS Pricing Calculator](https://calculator.aws/#/estimate?id=621f38b12a1ef026842ba2ddfe46ff936ed4ab01)  
-Hoặc tải [tệp ước tính ngân sách](../attachments/budget_estimation.pdf).  
+| Lớp | Dịch vụ |
+|---|---|
+| User / Edge | HTML/JS tĩnh trên S3 + CloudFront (HTTPS) |
+| API | API Gateway REST API, Cognito authorizer, usage plan + API key, CORS |
+| Compute | Hai hàm Lambda (Python): bộ tóm tắt đồng bộ, bộ báo cáo định kỳ hàng tuần |
+| AI | Amazon Bedrock — Amazon Nova Lite |
+| Data | DynamoDB (single table + GSI), bucket S3 báo cáo (AES-256, lifecycle Glacier) |
+| Scheduling | Rule cron hàng tuần của EventBridge |
+| DevOps | CodePipeline + CodeBuild (pytest, bandit, tfsec, plan/approve/apply), remote state Terraform (S3 + khóa DynamoDB) |
+| Bảo mật & Quan sát | CloudTrail (đa vùng), AWS Config + conformance pack CIS, dashboard + alarm CloudWatch, SNS |
 
-*Chi phí hạ tầng*  
-- AWS Lambda: 0,00 USD/tháng (1.000 request, 512 MB lưu trữ).  
-- S3 Standard: 0,15 USD/tháng (6 GB, 2.100 request, 1 GB quét).  
-- Truyền dữ liệu: 0,02 USD/tháng (1 GB vào, 1 GB ra).  
-- AWS Amplify: 0,35 USD/tháng (256 MB, request 500 ms).  
-- Amazon API Gateway: 0,01 USD/tháng (2.000 request).  
-- AWS Glue ETL Jobs: 0,02 USD/tháng (2 DPU).  
-- AWS Glue Crawlers: 0,07 USD/tháng (1 crawler).  
-- MQTT (IoT Core): 0,08 USD/tháng (5 thiết bị, 45.000 tin nhắn).  
+**Region chính:** ap-southeast-1 (Singapore).
 
-*Tổng*: 0,7 USD/tháng, 8,40 USD/12 tháng  
-- *Phần cứng*: 265 USD một lần (Raspberry Pi 5 và cảm biến).  
+## 5. Lộ Trình
 
-### 7. Đánh giá rủi ro  
-*Ma trận rủi ro*  
-- Mất mạng: Ảnh hưởng trung bình, xác suất trung bình.  
-- Hỏng cảm biến: Ảnh hưởng cao, xác suất thấp.  
-- Vượt ngân sách: Ảnh hưởng trung bình, xác suất thấp.  
+Giai đoạn thực tập 12 tuần, tháng 4 – tháng 7 năm 2026:
 
-*Chiến lược giảm thiểu*  
-- Mạng: Lưu trữ cục bộ trên Raspberry Pi với Docker.  
-- Cảm biến: Kiểm tra định kỳ, dự phòng linh kiện.  
-- Chi phí: Cảnh báo ngân sách AWS, tối ưu dịch vụ.  
+| Tuần | Giai đoạn |
+|---|---|
+| 1–5 | Học nền tảng AWS: networking, IAM, compute, storage, DNS, container |
+| 6 | Khởi động dự án: đề xuất, thiết kế kiến trúc, lựa chọn model, phân chia công việc |
+| 7 | Thiết lập môi trường: AWS CLI, Terraform, repository dùng chung, nghiên cứu dịch vụ |
+| 8 | Backend cốt lõi: tích hợp Bedrock, parsing phản hồi, lưu trữ DynamoDB, retry, unit test |
+| 9 | Lớp xác thực & API: Cognito User Pool + Hosted UI, các route API Gateway, authorizer, usage plan, CORS |
+| 10 | Infrastructure as Code: Terraform theo module, remote state kèm khóa |
+| 11 | Pipeline CI/CD + khả năng quan sát: CodePipeline, tự động hóa buildspec, metric tùy chỉnh, dashboard, alarm |
+| 12 | Tăng cường bảo mật & bàn giao: CIS benchmark, kiểm thử tải, triển khai frontend trên CloudFront, dọn dẹp, tài liệu |
 
-*Kế hoạch dự phòng*  
-- Quay lại thu thập thủ công nếu AWS gặp sự cố.  
-- Sử dụng CloudFormation để khôi phục cấu hình liên quan đến chi phí.  
+## 6. Ngân Sách
 
-### 8. Kết quả kỳ vọng  
-*Cải tiến kỹ thuật*: Dữ liệu và phân tích thời gian thực thay thế quy trình thủ công. Có thể mở rộng tới 10–15 trạm.  
-*Giá trị dài hạn*: Nền tảng dữ liệu 1 năm cho nghiên cứu AI, có thể tái sử dụng cho các dự án tương lai.
+Giới hạn cứng: $50/tháng cho toàn bộ các dịch vụ AWS. Các quyết định thiết kế đều xuất phát từ giới hạn này: dùng DynamoDB on-demand thay vì provisioned capacity, không dùng NAT gateway hay VPC endpoint, dùng mức bộ nhớ Lambda nhỏ nhất khả thi, và bỏ qua hoàn toàn tính năng cache phản hồi của API Gateway (chỉ riêng cụm cache nhỏ nhất đã tốn khoảng $14–19/tháng).
+
+Ước tính chi phí hàng tháng ở mức traffic dự kiến (vài nghìn request):
+
+| Mục | Chi phí ước tính/tháng |
+|---|---|
+| Lambda (cả hai hàm) | ~$0 (free tier) |
+| DynamoDB on-demand + PITR | < $1 |
+| API Gateway REST | < $1 |
+| Bedrock — token Nova Lite | ~$1 |
+| S3 + CloudFront (trang tĩnh + báo cáo) | < $1 |
+| Phút CodePipeline + CodeBuild | ~$2 |
+| CloudTrail (trail đầu tiên) + recorder & rule AWS Config | ~$3–5 |
+| Alarm/metric CloudWatch, SNS | ~$1 |
+| **Tổng** | **≈ $8–12 / tháng — nằm khá xa dưới giới hạn $50** |
+
+## 7. Rủi Ro
+
+| Rủi ro | Tác động | Xác suất | Biện pháp giảm thiểu |
+|---|---|---|---|
+| Quyền truy cập model Bedrock / giới hạn hạn mức on-demand trên một tài khoản AWS mới | Cao | Trung bình | Yêu cầu tăng hạn mức sớm qua AWS Support; giữ một luồng summarize giả lập (mock) để việc phát triển, kiểm thử, và demo không bao giờ bị chặn bởi hạn mức model |
+| Vượt ngân sách trên khoản tiền dành cho sinh viên | Trung bình | Trung bình | Ưu tiên mặc định free-tier, billing on-demand, cảnh báo ngân sách, tránh tài nguyên chạy liên tục; kiểm tra mỗi thay đổi so với giới hạn $50 |
+| Hai người làm hỏng hạ tầng dùng chung (xung đột state, cấu hình Cognito/CORS) | Trung bình | Trung bình | Remote state Terraform kèm khóa DynamoDB, bảo vệ nhánh (branch protection) kèm rà soát PR, phối hợp trước khi thay đổi tài nguyên dùng chung |
+| Cấu hình bảo mật sai (IAM quá rộng, bucket public) | Cao | Thấp | Cổng kiểm tra tfsec + bandit trong pipeline, IAM theo least-privilege, conformance pack CIS, kiểm toán CloudTrail |
+| Khả năng sử dụng model/region (model được chọn không được phục vụ ở region chính) | Trung bình | Thấp | Dùng cross-region inference profile; giữ model ID có thể cấu hình qua biến môi trường |

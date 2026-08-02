@@ -12,11 +12,11 @@ pre : " <b> 5.3. </b> "
 
 #### Luồng CI/CD Pipeline
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.png)
+![overview](/images/5-Workshop/5.3-Architechture-Design/CI_CD_Pipeline.jpeg)
 
 #### Luồng báo cáo hàng tuần (Weekly Report Path)
 
-![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.png)
+![overview](/images/5-Workshop/5.3-Architechture-Design/Weekly_Report_Path.jpeg)
 
 #### Bảng dịch vụ
 
@@ -33,11 +33,11 @@ pre : " <b> 5.3. </b> "
 | CloudWatch + SNS | Số liệu, dashboard, cảnh báo | Tích hợp sẵn với tất cả các dịch vụ AWS khác được dùng trong dự án |
 | CloudTrail + Config | Ghi log kiểm toán, quy tắc tuân thủ | Bắt buộc để đáp ứng conformance pack theo CIS Foundations Benchmark |
 | CodePipeline / CodeBuild | Tự động hóa CI/CD | Tích hợp gốc của AWS với CodeStar/GitHub, không cần dịch vụ CI riêng biệt |
-| Terraform | Hạ tầng dưới dạng mã (Infrastructure as Code) | Khai báo (declarative), quy trình plan-trước-khi-apply, kỹ năng có thể dùng trên nhiều nền tảng cloud |
+| Terraform | Hạ tầng dưới dạng mã (Infrastructure as Code) | Khai báo, quy trình plan-trước-khi-apply, kỹ năng có thể dùng trên nhiều nền tảng cloud |
 
 #### Nền tảng bảo mật và IAM
 
-**Nguyên tắc đặc quyền tối thiểu (least privilege) — vai trò thực thi của Lambda.** IAM role của hàm Lambda chỉ cấp đúng những hành động mà nó cần:
+**Nguyên tắc đặc quyền tối thiểu (least privilege) vai trò thực thi của Lambda.** IAM role của hàm Lambda chỉ cấp đúng những hành động mà nó cần:
 
 ```hcl
 resource "aws_iam_role_policy" "lambda_permissions" {
@@ -60,15 +60,15 @@ resource "aws_iam_role_policy" "lambda_permissions" {
 
 Không có wildcard `dynamodb:`, không có wildcard `bedrock:`, không có quyền truy cập vào bất kỳ bảng hay model nào khác. Nếu thông tin xác thực của role này bị rò rỉ, phạm vi ảnh hưởng chỉ giới hạn ở việc ghi/đọc một bảng DynamoDB và gọi một model Bedrock duy nhất.
 
-**IAM role so với user và hardcode key.** Lambda sử dụng một IAM **role** — được hàm Lambda sử dụng trong quá trình thực thi thông qua thông tin xác thực tạm thời được cấp tại thời điểm hàm được gọi; không có IAM user nào với access key tồn tại lâu dài được dùng, ngoại trừ trường hợp truy cập CLI của con người (personal profile). Trong suốt dự án, không có giá trị AWS credentials nào bị hardcode vào code ứng dụng hay commit lên git.
+**IAM role so với user và hardcode key.** Lambda sử dụng một IAM **role** được hàm Lambda sử dụng trong quá trình thực thi thông qua thông tin xác thực tạm thời được cấp tại thời điểm hàm được gọi; không có IAM user nào với access key tồn tại lâu dài được dùng, ngoại trừ trường hợp truy cập CLI của con người (personal profile). Trong suốt dự án, không có giá trị AWS credentials nào bị hardcode vào code ứng dụng hay commit lên git.
 
-**S3 bucket không nên công khai truy cập.** Bucket chứa frontend không được phép truy cập công khai. CloudFront truy cập bucket thông qua cơ chế **Origin Access Control (OAC)**. Do đó, cách duy nhất để truy cập nội dung là qua giao thức HTTPS bảo mật thông qua CloudFront — truy cập trực tiếp bằng URL S3 bị vô hiệu hóa.
+**S3 bucket không nên công khai truy cập.** Bucket chứa frontend không được phép truy cập công khai. CloudFront truy cập bucket thông qua cơ chế **Origin Access Control (OAC)**. Do đó, cách duy nhất để truy cập nội dung là qua giao thức HTTPS bảo mật thông qua CloudFront (truy cập trực tiếp bằng URL S3 bị vô hiệu hóa).
 
 **Đánh đổi bảo mật của Cognito.** Các tính năng bảo mật nâng cao được bật (phát hiện thông tin xác thực bị xâm phạm, đăng nhập dựa trên đánh giá rủi ro). Hosted UI được sử dụng thay vì tự xây dựng form đăng nhập, đánh đổi một phần khả năng tùy chỉnh giao diện để lấy một luồng xác thực được duy trì và vá lỗi bảo mật thường xuyên.
 
-**Cách xử lý secret hiện tại so với hướng nâng cấp.** Hiện tại, API key mà frontend sử dụng được lấy thông qua terraform output và đặt thủ công vào cấu hình môi trường. Hướng nâng cấp trong tương lai sẽ chuyển việc này sang **AWS Secrets Manager** với cơ chế xoay vòng (rotation) tự động, loại bỏ hoàn toàn bước thủ công.
+**Cách xử lý secret hiện tại so với hướng nâng cấp.** Hiện tại, API key mà frontend sử dụng được lấy thông qua terraform output và đặt thủ công vào cấu hình môi trường. Hướng nâng cấp trong tương lai sẽ chuyển việc này sang **AWS Secrets Manager** với cơ chế xoay vòng tự động, loại bỏ hoàn toàn bước thủ công.
 
-**CIS AWS Foundations Benchmark v1.4 Level 1 — mức độ tuân thủ hiện tại: 60%.** Có hai lỗ hổng đã biết được chấp nhận như những đánh đổi có chủ đích trong bối cảnh một dự án học tập có ngân sách hạn chế:
+**CIS AWS Foundations Benchmark v1.4 Level 1, mức độ tuân thủ hiện tại: 60%.** Có hai lỗ hổng đã biết được chấp nhận như những đánh đổi có chủ đích trong bối cảnh một dự án học tập có ngân sách hạn chế:
 
 - IAM role của CodeBuild hiện đang cấp AdministratorAccess thay vì tuân theo policy được giới hạn phạm vi, do bộ quyền cần thiết cho Terraform phụ thuộc vào tài nguyên đang được thay đổi, trong khi việc thiết lập quyền hạn chế chính xác tuyệt đối có mức ưu tiên thấp hơn so với ngân sách dự án (50 đô-la/tháng) và thời gian thực hiện.
 - Xác thực đa yếu tố (MFA) đã được thiết lập cho một user quản trị cá nhân (xem lại phần Prerequisites), nhưng chưa được áp dụng bắt buộc ở cấp độ IAM policy cho toàn bộ các tài khoản.
@@ -77,7 +77,7 @@ Cả hai vấn đề đều được ghi nhận rõ ràng tại đây, kèm kế
 #### Khả năng mở rộng (Scalability)
 
 Mọi lựa chọn về compute trong kiến trúc này đều đã có khả năng tự động scale về 0 và scale trở lại: Lambda scale theo từng request, DynamoDB tính phí theo nhu cầu sử dụng scale theo lưu lượng, API Gateway và CloudFront xử lý các đợt tăng đột biến lưu lượng một cách tự nhiên. Không điều gì trong số này cần can thiệp thủ công ở mức lưu lượng mà workshop này hướng tới.
-Đối với môi trường production ở quy mô thực tế, sẽ cần đưa vào các thay đổi sau — được đề cập trong tài liệu này như "hiện chưa cần thiết, nhưng đây là những gì sẽ thay đổi" chứ không phải là hạng mục cần thực hiện trong workshop này:
+Mỗi hạng mục dưới đây đều được chủ động đặt ngoài phạm vi ở quy mô này, chứ không phải bị bỏ sót. Đây là những thay đổi cần xem xét đầu tiên khi lưu lượng tăng lên, và thiết kế hiện tại cho phép bổ sung từng hạng mục mà không phải tái cấu trúc những gì đã có:
 - **Provisioned concurrency** cho Lambda để loại bỏ độ trễ cold-start trong các giai đoạn tải cao kéo dài.
 - **API Gateway response caching** hiện đang bị bỏ qua vì lý do chi phí (giải thích ở Mục 6.1), việc bổ sung tính năng này sẽ giúp giảm số lượt gọi Bedrock đối với các input bị lặp lại khi lưu lượng truy cập cao.
-- **Triển khai đa vùng (Multi-region deployment)** để hỗ trợ vấn đề độ trễ và khôi phục sau thảm họa (disaster recovery) — workshop này không yêu cầu điều đó do chỉ vận hành trong một vùng duy nhất (ap-southeast-1), với các lệnh gọi Bedrock chỉ được chuyển hướng sang vùng khác nhằm đảm bảo tính khả dụng của model.
+- **Triển khai đa vùng (Multi-region deployment)** để hỗ trợ vấn đề độ trễ và khôi phục sau thảm họa, workshop này không yêu cầu điều đó do chỉ vận hành trong một vùng duy nhất (ap-southeast-1), với các lệnh gọi Bedrock chỉ được chuyển hướng sang vùng khác nhằm đảm bảo tính khả dụng của model.

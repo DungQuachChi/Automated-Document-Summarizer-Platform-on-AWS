@@ -12,7 +12,7 @@ Request access to Amazon Nova Lite in Bedrock, understand how the Lambda calls i
 
 #### Terraform Wiring: IAM and Model ID
 
-- IAM policy scopes bedrock:InvokeModel to exactly two resources: the foundation model ARN and the cross-region inference profile ARN — not a wildcard.
+- IAM policy scopes bedrock:InvokeModel to exactly two resources: the foundation model ARN and the cross-region inference profile ARN, not a wildcard.
 - BEDROCK_MODEL_ID = "us.amazon.nova-lite-v1:0" is a Terraform-set Lambda environment variable, not hardcoded in Python.
 
 #### Cross-Region Requirement
@@ -27,7 +27,9 @@ The Lambda itself keeps running in ap-southeast-1; only the Bedrock API call cro
 
 #### The Quota Reality
 
-New AWS accounts are given with an on-demand quota of **zero requests/second** for a given Bedrock model, even after model access is accepted a genuine account-level restriction, not a bug in this project. Every **/summarize** call failed with ThrottlingException until an AWS Support case  increased it.
+New AWS accounts start with an on-demand quota of **zero requests/second** for a given Bedrock model, even after model access is granted. This is a genuine account-level restriction, not a bug in this project. Every **/summarize** call failed with ThrottlingException.
+
+We filed an AWS Support case to raise the quota. AWS declined for now, explaining that model eligibility depends on account age, payment history, and usage, that it is reassessed automatically over time, and that it is not a permanent restriction. In other words, the blocker is billing history, not configuration.
 
 ```python
 is_daily_quota = (
@@ -38,11 +40,13 @@ is_daily_quota = (
 
 Transient throttling retries with backoff; a daily-quota error fails fast instead, since retrying it just burns the Lambda's 30-second timeout for no benefit.
 
-The deployed Lambda has **no mock path** — it always calls real Bedrock, and returns a genuine 429 to real users if quota is exhausted:
+The deployed Lambda has **no mock path** of its own. It always calls real Bedrock and returns a genuine 429 to real users when quota is exhausted:
 
 ```json
 {"message": "Summarization limit reached for today. Please try again after midnight UTC."}
 ```
+
+To keep the frontend demo usable while access is gated, the static site has a `MOCK_SUMMARIZE` flag that serves a placeholder summary. Turning it off is a single flag with no code change, so real inference goes live the moment the account becomes eligible. The integration itself is verified by the pytest suite, which mocks Bedrock and asserts that the request payload, the retry path, and the 429 quota classification are all correct.
 
 Check CloudWatch → Metrics → Custom/Bedrock → BedrockErrors, dimension ErrorType = DailyQuotaExceeded, to confirm the Lambda classified the error correctly.
 

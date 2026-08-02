@@ -13,18 +13,18 @@ pre : " <b> 5.7. </b> "
 1. **CloudWatch** console → **Log groups** → /aws/lambda/doc-summarizer-fn.
 2. Click into the most recent log stream to see individual invocation output, including the print() statements in the Lambda code.
 
-**API Gateway execution logs.** Disabled by default — must be explicitly enabled per stage.
+**API Gateway execution logs.** Disabled by default must be explicitly enabled per stage.
 
 1. **API Gateway** console → doc-summarizer-api → **Stages** → v1 → **Logs and tracing** tab.
-2. Enable **CloudWatch Logs**, log level **INFO** or **ERROR**, and **Log full requests/responses data** for debugging — turn this off again afterward, since it can log sensitive request bodies.
-3. This requires an IAM role with CloudWatch Logs permissions attached to API Gateway at the account level (**API Gateway** → **Settings** → **CloudWatch log role ARN**) — a common gap in general, though this project's API Gateway module already provisions that role in Terraform.
+2. Enable **CloudWatch Logs**, log level **INFO** or **ERROR**, and **Log full requests/responses data** for debugging, turn this off again afterward, since it can log sensitive request bodies.
+3. This requires an IAM role with CloudWatch Logs permissions attached to API Gateway at the account level (**API Gateway** → **Settings** → **CloudWatch log role ARN**) a common gap in general, though this project's API Gateway module already provisions that role in Terraform.
 
 **CodeBuild logs.** Each pipeline stage's CodeBuild project streams its build output to CloudWatch Logs automatically.
 
 1. **CodePipeline** console → doc-summarizer-pipeline → click a stage → **Details** link on the relevant action.
 2. This opens the CodeBuild build page, with the full command output.
 
-**Reading a failed pipeline stage:** scroll to the first line containing FAILED or a non-zero exit code — CodeBuild logs are chronological, and the actual failure is usually near the bottom, not the top, since later steps still attempt to run cleanup even after a failure earlier in the phase.
+**Reading a failed pipeline stage:** scroll to the first line containing FAILED or a non-zero exit code. CodeBuild logs are chronological, and the actual failure is usually near the bottom, not the top, since later steps still attempt to run cleanup even after a failure earlier in the phase.
 
 #### Metrics
 
@@ -34,9 +34,9 @@ pre : " <b> 5.7. </b> "
 |---|---|---|
 | Duration, Errors, Throttles, Invocations | Lambda | Execution time, failure rate, concurrency limits being hit |
 | 4XXError, 5XXError, Count, Latency | API Gateway | Client vs server error rates, overall traffic volume |
-| ConsumedReadCapacityUnits, ConsumedWriteCapacityUnits | DynamoDB | Actual on-demand usage — useful for cost tracking |
+| ConsumedReadCapacityUnits, ConsumedWriteCapacityUnits | DynamoDB | Actual on-demand usage, useful for cost tracking |
 
-**Custom metrics** — the Custom/Bedrock namespace, emitted explicitly by the Lambda code:
+**Custom metrics**: the Custom/Bedrock namespace, emitted explicitly by the Lambda code:
 
 | Metric | Meaning |
 |---|---|
@@ -48,15 +48,15 @@ The ErrorType dimension is what makes it possible to distinguish "hit the daily 
 
 #### Alerts
 
-The verification step: publish a test data point to Custom/Bedrock / BedrockErrors manually, wait for the alarm's evaluation period, and confirm both the CloudWatch alarm state changes to **In alarm** and the SNS email arrives. This is worth re-running here as part of the overall test pass, not just once during initial setup — alarm configurations can silently break without any obvious symptom until the moment they're actually needed.
+The verification step: publish a test data point to Custom/Bedrock / BedrockErrors manually, wait for the alarm's evaluation period, and confirm both the CloudWatch alarm state changes to **In alarm** and the SNS email arrives. This is worth re-running here as part of the overall test pass, not just once during initial setup **alarm configurations can silently break without any obvious symptom until the moment they're actually needed**.
 
 #### Manual Test Plan
 
-Using curl against the deployed API (https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1):
+Using curl against the deployed API (https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1):
 
 **1. Valid request with auth:**
 ```bash
-curl -X POST https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
+curl -X POST https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
   -H "Content-Type: application/json" \
   -H "Authorization: YOUR-ID-TOKEN" \
   -H "x-api-key: YOUR-API-KEY" \
@@ -66,23 +66,23 @@ Expected: 200 with a summary field, or 429 if the daily Bedrock quota is current
 
 **2. Missing token:**
 ```bash
-curl -X POST https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
+curl -X POST https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
   -H "x-api-key: YOUR-API-KEY" \
   -d '{"text": "test"}'
 ```
-Expected: 401 Unauthorized — confirms the Cognito authorizer is enforced.
+Expected: 401 Unauthorized confirms the Cognito authorizer is enforced.
 
 **3. Missing API key:**
 ```bash
-curl -X POST https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
+curl -X POST https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1/summarize \
   -H "Authorization: YOUR-ID-TOKEN" \
   -d '{"text": "test"}'
 ```
-Expected: 403 Forbidden — confirms the usage plan's API key requirement is enforced.
+Expected: 403 Forbidden confirms the usage plan's API key requirement is enforced.
 
 **4. GET /history:**
 ```bash
-curl https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1/history \
+curl https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1/history \
   -H "Authorization: YOUR-ID-TOKEN" \
   -H "x-api-key: YOUR-API-KEY"
 ```
@@ -119,10 +119,10 @@ moto intercepts boto3 calls and simulates DynamoDB in-memory, so these tests run
 
 locustfile.py can run in two distinct modes, and it's important to know which one produced a given result before drawing conclusions from it:
 
-- **MOCK_MODE=true** (the default) — auth is skipped in favor of a fixed placeholder Bearer token, and requests go wherever --host points. This exercises the request/response contract and concurrency handling without depending on Cognito or Bedrock being available.
-- **MOCK_MODE=false** — the script calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 to get a real JWT, and every request carries the real x-api-key header. This is the only mode that actually exercises Bedrock.
+- **MOCK_MODE=true** (the default): auth is skipped in favor of a fixed placeholder Bearer token, and requests go wherever --host points. This exercises the request/response contract and concurrency handling without depending on Cognito or Bedrock being available.
+- **MOCK_MODE=false**: the script calls cognito-idp:InitiateAuth with USER_PASSWORD_AUTH directly via boto3 to get a real JWT, and every request carries the real x-api-key header. This is the only mode that actually exercises Bedrock.
 
-**Mock-mode results — 50 concurrent users:**
+**Mock-mode results 50 concurrent users:**
 
 | Metric | Value |
 |---|---|
@@ -139,7 +139,7 @@ locustfile.py can run in two distinct modes, and it's important to know which on
 | GET /history | 2,282 | 3 ms | 4 ms | 5 ms | 7 ms | 24 ms |
 | POST /summarize | 6,802 | 3 ms | 4 ms | 6 ms | 7 ms | 23 ms |
 
-Users ramped from 0 to 50 over the first ~50 seconds; once steady, throughput held flat at ~24 req/s with 0 failures across all three endpoints for the remainder of the run — response times don't degrade as concurrency increases 5x over the earlier 10-user baseline (4ms avg / 6ms p95 / 7ms p99). This indicates the bottleneck described below is specific to real Bedrock calls, not the request handling, auth path, or DynamoDB access pattern.
+Users ramped from 0 to 50 over the first ~50 seconds; once steady, throughput held flat at ~24 req/s with 0 failures across all three endpoints for the remainder of the run, response times don't degrade as concurrency increases 5x over the earlier 10-user baseline (4ms avg / 6ms p95 / 7ms p99). This indicates the bottleneck described below is specific to real Bedrock calls, not the request handling, auth path, or DynamoDB access pattern.
 
 **Running it:**
 ```bash
@@ -152,11 +152,11 @@ Set `--host` to `http://localhost:8000` for the mock server, or the real API Gat
 
 1. Create a test Cognito user for load testing:
    ```bash
-   AWS_PROFILE=phatnguyen aws cognito-idp admin-create-user \
-     --user-pool-id ap-southeast-1_Uo593E4hR \
+   AWS_PROFILE=YOUR-PROFILE aws cognito-idp admin-create-user \
+     --user-pool-id YOUR-USER-POOL-ID \
      --username loadtest@example.com
-   AWS_PROFILE=phatnguyen aws cognito-idp admin-set-user-password \
-     --user-pool-id ap-southeast-1_Uo593E4hR \
+   AWS_PROFILE=YOUR-PROFILE aws cognito-idp admin-set-user-password \
+     --user-pool-id YOUR-USER-POOL-ID \
      --username loadtest@example.com \
      --password YourStrongPass123! \
      --permanent
@@ -165,19 +165,19 @@ Set `--host` to `http://localhost:8000` for the mock server, or the real API Gat
    ```
    MOCK_MODE=false
    COGNITO_REGION=ap-southeast-1
-   CLIENT_ID=7mfke3ntkous3rbvpbqpu7c2nb
+   CLIENT_ID=<value from: terraform output -raw cognito_app_client_id>
    TEST_USERNAME=loadtest@example.com
    TEST_PASSWORD=YourStrongPass123!
    API_KEY=<value from: terraform output -raw api_key_value>
    ```
 3. Run Locust against the real endpoint:
    ```bash
-   locust -f locustfile.py --host https://kqtcvcv5g0.execute-api.ap-southeast-1.amazonaws.com/v1
+   locust -f locustfile.py --host https://YOUR-API-ID.execute-api.ap-southeast-1.amazonaws.com/v1
    ```
 4. Open the Locust web UI (default `http://localhost:8089`), set number of users and ramp-up rate, start the test.
 
 
-**Project load testing result:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds — API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause — 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue.
+**Project load testing result:** a run of 5 concurrent users ramping at 1/sec in real-API mode showed GET /history performing correctly, while every POST /summarize request failed with 502/504 at almost exactly 29 seconds, API Gateway's hard integration timeout ceiling. Root cause: the Lambda's retry logic was retrying Bedrock throttling errors with exponential backoff, consuming the entire 30-second Lambda timeout before ever returning a response. The mock-mode results above rule out the request/auth path as the cause, 50 concurrent users produced zero failures under mock mode, so the 502/504s are specific to real Bedrock invocations, not a concurrency or code-path issue.
 
 ![overview](/images/5-Workshop/5.5-Testing/Locust_testingtesting.jpeg)
 
